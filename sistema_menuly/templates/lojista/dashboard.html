@@ -1,0 +1,501 @@
+{% extends 'lojista/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Painel do Lojista{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_icon %}fas fa-th-large{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .welcome-message {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-change {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .change-positive {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .change-negative {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .quick-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .action-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .action-btn i {
+        margin-right: 0.5rem;
+    }
+    
+    .recent-orders {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .order-item {
+        border-bottom: 1px solid #e9ecef;
+        padding: 1rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    
+    .order-info h6 {
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+    
+    .order-info small {
+        color: #6c757d;
+    }
+    
+    .order-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-recebido {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-preparando {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .status-pronto {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-entregue {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .restaurant-selector {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: 400px;
+    }
+    
+    .notification-badge {
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 10px;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cards de Estatísticas -->
+    <!-- Seletor de Restaurante -->
+    {% if user_restaurants|length > 1 %}
+    <div class="restaurant-selector">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h6 class="mb-0">
+                    <i class="fas fa-store me-2"></i>
+                    Selecione o Restaurante:
+                </h6>
+            </div>
+            <div class="col-md-6">
+                <select class="form-select" id="restaurantSelector">
+                    <option value="">Todos os Restaurantes</option>
+                    {% for restaurant in user_restaurants %}
+                    <option value="{{ restaurant.id }}" {% if restaurant.id == selected_restaurant_id %}selected{% endif %}>
+                        {{ restaurant.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-primary text-white">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stats-number text-primary">{{ pedidos_hoje }}</div>
+                <div class="stats-label">Pedidos Hoje</div>
+                <span class="stats-change change-positive">
+                    <i class="fas fa-arrow-up"></i> +12% vs ontem
+                </span>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-success text-white">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stats-number text-success">R$ {{ faturamento_hoje|floatformat:2 }}</div>
+                <div class="stats-label">Faturamento Hoje</div>
+                <span class="stats-change change-positive">
+                    <i class="fas fa-arrow-up"></i> +8% vs ontem
+                </span>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-warning text-white">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stats-number text-warning">{{ pedidos_pendentes }}</div>
+                <div class="stats-label">Pedidos Pendentes</div>
+                <span class="stats-change change-negative">
+                    <i class="fas fa-exclamation-triangle"></i> Requer atenção
+                </span>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-info text-white">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stats-number text-info">{{ clientes_mes }}</div>
+                <div class="stats-label">Clientes este Mês</div>
+                <span class="stats-change change-positive">
+                    <i class="fas fa-arrow-up"></i> +5% vs mês passado
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ações Rápidas -->
+    <div class="quick-actions">
+        <h5 class="mb-3">
+            <i class="fas fa-bolt me-2"></i>
+            Ações Rápidas
+        </h5>
+        <div class="d-flex flex-wrap">
+            <a href="#" class="action-btn">
+                <i class="fas fa-plus"></i>
+                Novo Produto
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-tags"></i>
+                Nova Categoria
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-store"></i>
+                Configurar Restaurante
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-chart-bar"></i>
+                Relatórios
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-cog"></i>
+                Configurações
+            </a>
+        </div>
+    </div>
+    
+    <!-- Gráficos e Pedidos Recentes -->
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="chart-container">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Vendas dos Últimos 7 Dias
+                </h5>
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="recent-orders">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Pedidos Recentes
+                    </h5>
+                    {% if pedidos_pendentes > 0 %}
+                    <span class="notification-badge">{{ pedidos_pendentes }}</span>
+                    {% endif %}
+                </div>
+                
+                {% for pedido in pedidos_recentes %}
+                <div class="order-item">
+                    <div class="order-info">
+                        <h6>#{{ pedido.numero }}</h6>
+                        <small>{{ pedido.cliente.nome }} - R$ {{ pedido.total|floatformat:2 }}</small>
+                        <br>
+                        <small class="text-muted">{{ pedido.criado_em|timesince }} atrás</small>
+                    </div>
+                    <span class="order-status status-{{ pedido.status }}">
+                        {{ pedido.get_status_display }}
+                    </span>
+                </div>
+                {% empty %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum pedido recente</p>
+                </div>
+                {% endfor %}
+                
+                {% if pedidos_recentes %}
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-outline-primary btn-sm">
+                        Ver Todos os Pedidos
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Restaurantes do Usuário -->
+    <div class="row">
+        <div class="col-12">
+            <div class="recent-orders">
+                <h5 class="mb-3">
+                    <i class="fas fa-store me-2"></i>
+                    Meus Restaurantes
+                </h5>
+                
+                {% if user_restaurants %}
+                <div class="row">
+                    {% for restaurant in user_restaurants %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="restaurant-avatar me-3" 
+                                         style="width: 50px; height: 50px; background: {{ restaurant.cor_primaria|default:'#007bff' }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">{{ restaurant.nome }}</h6>
+                                        <small class="text-muted">{{ restaurant.slug }}</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="fw-bold">{{ restaurant.produtos.count }}</div>
+                                            <small class="text-muted">Produtos</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold">{{ restaurant.categorias.count }}</div>
+                                            <small class="text-muted">Categorias</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold">
+                                                {% if restaurant.ativo %}
+                                                <span class="text-success">Ativo</span>
+                                                {% else %}
+                                                <span class="text-danger">Inativo</span>
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">Status</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="/{{ restaurant.slug }}/" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-external-link-alt me-1"></i>
+                                        Ver Site
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-store-slash fa-3x text-muted mb-3"></i>
+                    <h6>Nenhum Restaurante Cadastrado</h6>
+                    <p class="text-muted">Cadastre seu primeiro restaurante para começar a vender online</p>
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Cadastrar Restaurante
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Atualizar horário em tempo real
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('pt-BR');
+        document.getElementById('current-time').textContent = timeString;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Gráfico de Vendas
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+            datasets: [{
+                label: 'Vendas (R$)',
+                data: [150, 280, 320, 180, 420, 650, 390],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Seletor de Restaurante
+    const restaurantSelector = document.getElementById('restaurantSelector');
+    if (restaurantSelector) {
+        restaurantSelector.addEventListener('change', function() {
+            const selectedId = this.value;
+            // Aqui você pode fazer uma requisição AJAX para filtrar os dados
+            console.log('Restaurante selecionado:', selectedId);
+        });
+    }
+    
+    // Auto-refresh dos dados a cada 30 segundos
+    setInterval(function() {
+        // Aqui você pode fazer requisições AJAX para atualizar os dados em tempo real
+        console.log('Atualizando dados...');
+    }, 30000);
+});
+</script>
+{% endblock %}

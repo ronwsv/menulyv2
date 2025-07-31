@@ -1,0 +1,592 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ restaurante.nome }} - Delivery Online{% endblock %}
+{% block description %}{{ restaurante.sobre_nos|truncatewords:20 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos do menu do restaurante */
+    .menu-hero {
+        background: var(--gradiente-principal);
+        color: white;
+        padding: 40px 0;
+        {% if restaurante.banner %}
+        background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{{ restaurante.banner.url }}');
+        background-size: cover;
+        background-position: center;
+        {% endif %}
+    }
+    
+    .categoria-nav {
+        position: sticky;
+        top: 76px;
+        z-index: 100;
+        background: white;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .produto-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .produto-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .badge-destaque {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #ff6b6b;
+        color: white;
+    }
+    
+    .busca-produtos {
+        border-radius: 25px;
+        border: 2px solid var(--cor-principal);
+    }
+    
+    .categoria-btn {
+        border-radius: 25px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .categoria-btn.active {
+        background: var(--cor-principal);
+        color: white;
+        border-color: var(--cor-principal);
+    }
+    
+    /* Modal do produto */
+    .produto-modal .modal-header {
+        background: var(--gradiente-principal);
+        color: white;
+    }
+    
+    .opcao-item {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .opcao-item:hover {
+        border-color: var(--cor-principal);
+    }
+    
+    .opcao-item.selected {
+        border-color: var(--cor-principal);
+        background: rgba(102, 126, 234, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section do Restaurante -->
+<section class="menu-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-5 fw-bold mb-3">{{ restaurante.nome }}</h1>
+                {% if restaurante.slogan %}
+                    <p class="lead mb-3">{{ restaurante.slogan }}</p>
+                {% endif %}
+                {% if restaurante.mensagem_boas_vindas %}
+                    <p class="mb-3">{{ restaurante.mensagem_boas_vindas }}</p>
+                {% endif %}
+                
+                <div class="d-flex gap-4 text-sm">
+                    <span>
+                        <i class="fas fa-clock me-1"></i>
+                        {{ restaurante.tempo_estimado_entrega }}min
+                    </span>
+                    <span>
+                        <i class="fas fa-shipping-fast me-1"></i>
+                        Taxa: R$ {{ restaurante.taxa_entrega }}
+                    </span>
+                    {% if restaurante.pedido_minimo > 0 %}
+                    <span>
+                        <i class="fas fa-wallet me-1"></i>
+                        Mín: R$ {{ restaurante.pedido_minimo }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-4 text-end">
+                {% if restaurante.logo %}
+                    <img src="{{ restaurante.logo.url }}" alt="{{ restaurante.nome }}" 
+                         class="img-fluid rounded shadow" style="max-height: 120px;">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Navegação de Categorias -->
+<nav class="categoria-nav py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="d-flex flex-wrap">
+                    <button class="btn btn-outline-primary categoria-btn active" data-categoria="todos">
+                        <i class="fas fa-list me-1"></i>Todos
+                    </button>
+                    {% for categoria in categorias %}
+                        <button class="btn btn-outline-primary categoria-btn" data-categoria="{{ categoria.id }}">
+                            {{ categoria.nome }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control busca-produtos" 
+                       placeholder="Buscar produtos..." id="busca-input">
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Produtos em Destaque -->
+{% if produtos_destaque %}
+<section class="py-4 bg-light">
+    <div class="container">
+        <h3 class="mb-4">
+            <i class="fas fa-star text-warning me-2"></i>Produtos em Destaque
+        </h3>
+        <div class="row g-3">
+            {% for produto in produtos_destaque %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card produto-card h-100" onclick="abrirModalProduto({{ produto.id }})">
+                        <div class="position-relative">
+                            {% if produto.imagem_principal %}
+                                <img src="{{ produto.imagem_principal.url }}" class="card-img-top" 
+                                     style="height: 200px; object-fit: cover;" alt="{{ produto.nome }}">
+                            {% endif %}
+                            {% if produto.destaque %}
+                                <span class="badge badge-destaque">DESTAQUE</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">{{ produto.nome }}</h6>
+                            <p class="card-text small text-muted">{{ produto.descricao|truncatewords:10 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="text-success">R$ {{ produto.preco }}</strong>
+                                {% if produto.tempo_preparo %}
+                                    <small class="text-muted">{{ produto.tempo_preparo }}min</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Cardápio por Categorias -->
+<section class="py-5">
+    <div class="container">
+        {% for categoria in categorias %}
+            <div class="categoria-section" data-categoria-id="{{ categoria.id }}">
+                <h3 class="mb-4" id="categoria-{{ categoria.id }}">
+                    {{ categoria.nome }}
+                    {% if categoria.descricao %}
+                        <small class="text-muted d-block">{{ categoria.descricao }}</small>
+                    {% endif %}
+                </h3>
+                
+                <div class="row g-4 produtos-grid">
+                    {% for produto in categoria.produtos.all %}
+                        {% if produto.disponivel %}
+                            <div class="col-md-6 col-lg-4 produto-item" data-nome="{{ produto.nome|lower }}">
+                                <div class="card produto-card h-100" onclick="abrirModalProduto({{ produto.id }})">
+                                    <div class="position-relative">
+                                        {% if produto.imagem_principal %}
+                                            <img src="{{ produto.imagem_principal.url }}" class="card-img-top" 
+                                                 style="height: 200px; object-fit: cover;" alt="{{ produto.nome }}">
+                                        {% endif %}
+                                        {% if produto.destaque %}
+                                            <span class="badge badge-destaque">DESTAQUE</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ produto.nome }}</h6>
+                                        <p class="card-text small text-muted">{{ produto.descricao|truncatewords:12 }}</p>
+                                        
+                                        <!-- Informações extras -->
+                                        <div class="mb-2">
+                                            {% if produto.calorias %}
+                                                <span class="badge bg-light text-dark me-1">{{ produto.calorias }} cal</span>
+                                            {% endif %}
+                                            {% if produto.tempo_preparo %}
+                                                <span class="badge bg-light text-dark">{{ produto.tempo_preparo }}min</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong class="text-success h6 mb-0">R$ {{ produto.preco }}</strong>
+                                            <button class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            {% if not forloop.last %}
+                <hr class="my-5">
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Carrinho Flutuante -->
+<div class="carrinho-flutuante d-none" id="carrinho-flutuante" onclick="abrirCarrinho()">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-shopping-cart me-2"></i>
+        <span id="carrinho-quantidade">0</span> itens
+        <span class="ms-2">R$ <span id="carrinho-total">0,00</span></span>
+    </div>
+</div>
+
+<!-- Modal do Produto -->
+<div class="modal fade" id="modalProduto" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content produto-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProdutoTitulo"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img id="modalProdutoImagem" src="" class="img-fluid rounded" alt="">
+                    </div>
+                    <div class="col-md-6">
+                        <p id="modalProdutoDescricao" class="mb-3"></p>
+                        
+                        <div id="modalProdutoInfos" class="mb-3"></div>
+                        
+                        <div id="modalProdutoOpcoes" class="mb-4"></div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Observações:</label>
+                            <textarea id="modalProdutoObservacoes" class="form-control" rows="2" 
+                                    placeholder="Alguma observação especial?"></textarea>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="h5 mb-0">Quantidade:</span>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="alterarQuantidade(-1)">-</button>
+                                <span class="btn btn-outline-secondary" id="modalProdutoQuantidade">1</span>
+                                <button class="btn btn-outline-secondary" onclick="alterarQuantidade(1)">+</button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="h4 text-success mb-0">
+                                R$ <span id="modalProdutoPrecoTotal">0,00</span>
+                            </span>
+                            <button class="btn btn-success btn-lg" onclick="adicionarAoCarrinho()">
+                                <i class="fas fa-cart-plus me-2"></i>Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal do Carrinho -->
+<div class="modal fade" id="modalCarrinho" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-shopping-cart me-2"></i>Seu Carrinho
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="carrinho-itens"></div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span>R$ <span id="carrinho-subtotal">0,00</span></span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Taxa de entrega:</span>
+                    <span>R$ {{ restaurante.taxa_entrega }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between h5">
+                    <span>Total:</span>
+                    <span class="text-success">R$ <span id="carrinho-total-final">0,00</span></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Continuar Comprando
+                </button>
+                <a href="{% url 'restaurante:checkout' slug=restaurante.slug %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-credit-card me-2"></i>Finalizar Pedido
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sistema de carrinho do mini-site
+    let carrinho = JSON.parse(localStorage.getItem('carrinho_{{ restaurante.id }}') || '[]');
+    let produtoAtual = null;
+    
+    // Dados dos produtos (vamos preencher via template)
+    const produtos = {
+        {% for categoria in categorias %}
+            {% for produto in categoria.produtos.all %}
+                {{ produto.id }}: {
+                    id: {{ produto.id }},
+                    nome: "{{ produto.nome|escapejs }}",
+                    descricao: "{{ produto.descricao|escapejs }}",
+                    preco: {{ produto.preco }},
+                    imagem: "{% if produto.imagem_principal %}{{ produto.imagem_principal.url }}{% endif %}",
+                    calorias: {% if produto.calorias %}{{ produto.calorias }}{% else %}null{% endif %},
+                    tempo_preparo: {% if produto.tempo_preparo %}{{ produto.tempo_preparo }}{% else %}null{% endif %}
+                },
+            {% endfor %}
+        {% endfor %}
+    };
+    
+    // Inicializa a página
+    document.addEventListener('DOMContentLoaded', function() {
+        atualizarCarrinhoFlutuante();
+        configurarBusca();
+        configurarFiltrosCategorias();
+    });
+    
+    // Função para abrir modal do produto
+    function abrirModalProduto(produtoId) {
+        produtoAtual = produtos[produtoId];
+        if (!produtoAtual) return;
+        
+        document.getElementById('modalProdutoTitulo').textContent = produtoAtual.nome;
+        document.getElementById('modalProdutoDescricao').textContent = produtoAtual.descricao;
+        document.getElementById('modalProdutoImagem').src = produtoAtual.imagem;
+        document.getElementById('modalProdutoQuantidade').textContent = '1';
+        document.getElementById('modalProdutoObservacoes').value = '';
+        
+        // Informações extras
+        let infos = '';
+        if (produtoAtual.calorias) {
+            infos += `<span class="badge bg-light text-dark me-2">${produtoAtual.calorias} calorias</span>`;
+        }
+        if (produtoAtual.tempo_preparo) {
+            infos += `<span class="badge bg-light text-dark">${produtoAtual.tempo_preparo} min</span>`;
+        }
+        document.getElementById('modalProdutoInfos').innerHTML = infos;
+        
+        atualizarPrecoModal();
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalProduto'));
+        modal.show();
+    }
+    
+    // Função para alterar quantidade no modal
+    function alterarQuantidade(delta) {
+        const quantidadeEl = document.getElementById('modalProdutoQuantidade');
+        let quantidade = parseInt(quantidadeEl.textContent) + delta;
+        if (quantidade < 1) quantidade = 1;
+        quantidadeEl.textContent = quantidade;
+        atualizarPrecoModal();
+    }
+    
+    // Atualiza o preço total no modal
+    function atualizarPrecoModal() {
+        if (!produtoAtual) return;
+        
+        const quantidade = parseInt(document.getElementById('modalProdutoQuantidade').textContent);
+        const total = produtoAtual.preco * quantidade;
+        document.getElementById('modalProdutoPrecoTotal').textContent = total.toFixed(2);
+    }
+    
+    // Adiciona produto ao carrinho
+    function adicionarAoCarrinho() {
+        if (!produtoAtual) return;
+        
+        const quantidade = parseInt(document.getElementById('modalProdutoQuantidade').textContent);
+        const observacoes = document.getElementById('modalProdutoObservacoes').value;
+        
+        const item = {
+            produto_id: produtoAtual.id,
+            nome: produtoAtual.nome,
+            preco: produtoAtual.preco,
+            quantidade: quantidade,
+            observacoes: observacoes,
+            subtotal: produtoAtual.preco * quantidade
+        };
+        
+        // Verifica se o produto já está no carrinho
+        const indexExistente = carrinho.findIndex(i => 
+            i.produto_id === item.produto_id && i.observacoes === item.observacoes
+        );
+        
+        if (indexExistente >= 0) {
+            carrinho[indexExistente].quantidade += quantidade;
+            carrinho[indexExistente].subtotal = carrinho[indexExistente].preco * carrinho[indexExistente].quantidade;
+        } else {
+            carrinho.push(item);
+        }
+        
+        salvarCarrinho();
+        atualizarCarrinhoFlutuante();
+        
+        // Fecha o modal
+        bootstrap.Modal.getInstance(document.getElementById('modalProduto')).hide();
+        
+        // Mostra feedback
+        showToast('Produto adicionado ao carrinho!', 'success');
+    }
+    
+    // Salva carrinho no localStorage
+    function salvarCarrinho() {
+        localStorage.setItem('carrinho_{{ restaurante.id }}', JSON.stringify(carrinho));
+    }
+    
+    // Atualiza o carrinho flutuante
+    function atualizarCarrinhoFlutuante() {
+        const carrinhoEl = document.getElementById('carrinho-flutuante');
+        const quantidadeEl = document.getElementById('carrinho-quantidade');
+        const totalEl = document.getElementById('carrinho-total');
+        
+        if (carrinho.length === 0) {
+            carrinhoEl.classList.add('d-none');
+            return;
+        }
+        
+        const quantidade = carrinho.reduce((total, item) => total + item.quantidade, 0);
+        const subtotal = carrinho.reduce((total, item) => total + item.subtotal, 0);
+        
+        quantidadeEl.textContent = quantidade;
+        totalEl.textContent = subtotal.toFixed(2);
+        carrinhoEl.classList.remove('d-none');
+    }
+    
+    // Abre modal do carrinho
+    function abrirCarrinho() {
+        if (carrinho.length === 0) return;
+        
+        const itensEl = document.getElementById('carrinho-itens');
+        const subtotalEl = document.getElementById('carrinho-subtotal');
+        const totalFinalEl = document.getElementById('carrinho-total-final');
+        
+        // Monta lista de itens
+        let html = '';
+        carrinho.forEach((item, index) => {
+            html += `
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <div>
+                        <h6 class="mb-1">${item.nome}</h6>
+                        <small class="text-muted">${item.quantidade}x R$ ${item.preco.toFixed(2)}</small>
+                        ${item.observacoes ? `<br><small class="text-muted">${item.observacoes}</small>` : ''}
+                    </div>
+                    <div class="text-end">
+                        <strong>R$ ${item.subtotal.toFixed(2)}</strong>
+                        <br>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removerDoCarrinho(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        itensEl.innerHTML = html;
+        
+        // Calcula totais
+        const subtotal = carrinho.reduce((total, item) => total + item.subtotal, 0);
+        const taxaEntrega = {{ restaurante.taxa_entrega }};
+        const total = subtotal + taxaEntrega;
+        
+        subtotalEl.textContent = subtotal.toFixed(2);
+        totalFinalEl.textContent = total.toFixed(2);
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalCarrinho'));
+        modal.show();
+    }
+    
+    // Remove item do carrinho
+    function removerDoCarrinho(index) {
+        carrinho.splice(index, 1);
+        salvarCarrinho();
+        atualizarCarrinhoFlutuante();
+        abrirCarrinho(); // Atualiza o modal
+    }
+    
+    // Configura busca de produtos
+    function configurarBusca() {
+        const buscaInput = document.getElementById('busca-input');
+        buscaInput.addEventListener('input', function(e) {
+            const termo = e.target.value.toLowerCase();
+            const produtos = document.querySelectorAll('.produto-item');
+            
+            produtos.forEach(produto => {
+                const nome = produto.dataset.nome;
+                if (nome.includes(termo)) {
+                    produto.style.display = 'block';
+                } else {
+                    produto.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Configura filtros de categorias
+    function configurarFiltrosCategorias() {
+        const categoriaBtns = document.querySelectorAll('.categoria-btn');
+        
+        categoriaBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active de todos
+                categoriaBtns.forEach(b => b.classList.remove('active'));
+                
+                // Adiciona active no clicado
+                this.classList.add('active');
+                
+                const categoriaId = this.dataset.categoria;
+                const sections = document.querySelectorAll('.categoria-section');
+                
+                if (categoriaId === 'todos') {
+                    sections.forEach(section => section.style.display = 'block');
+                } else {
+                    sections.forEach(section => {
+                        if (section.dataset.categoriaId === categoriaId) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}

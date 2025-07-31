@@ -1,0 +1,593 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Super Admin{% endblock %}
+{% block page_title %}Dashboard Administrativo{% endblock %}
+{% block page_icon %}fas fa-tachometer-alt{% endblock %}
+{% block page_subtitle %}
+<p class="content-subtitle">Visão geral completa do sistema e performance</p>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        border-left: 4px solid;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .metric-card.primary {
+        border-left-color: var(--primary-color);
+    }
+    
+    .metric-card.success {
+        border-left-color: var(--success-color);
+    }
+    
+    .metric-card.warning {
+        border-left-color: var(--warning-color);
+    }
+    
+    .metric-card.info {
+        border-left-color: var(--info-color);
+    }
+    
+    .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .metric-change {
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        margin-top: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .change-positive {
+        background: rgba(39, 174, 96, 0.1);
+        color: #27ae60;
+    }
+    
+    .change-negative {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+    
+    .change-neutral {
+        background: rgba(52, 73, 94, 0.1);
+        color: #34495e;
+    }
+    
+    .recent-activity {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        height: 400px;
+        overflow-y: auto;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 0.9rem;
+        color: white;
+    }
+    
+    .activity-content h6 {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+    
+    .activity-content small {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        height: 400px;
+    }
+    
+    .system-health {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .health-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .health-item:last-child {
+        border-bottom: none;
+    }
+    
+    .health-label {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+    
+    .health-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-excellent {
+        background: rgba(39, 174, 96, 0.1);
+        color: #27ae60;
+    }
+    
+    .status-good {
+        background: rgba(52, 152, 219, 0.1);
+        color: #3498db;
+    }
+    
+    .status-warning {
+        background: rgba(241, 196, 15, 0.1);
+        color: #f1c40f;
+    }
+    
+    .top-restaurants {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .restaurant-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .restaurant-item:last-child {
+        border-bottom: none;
+    }
+    
+    .restaurant-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .restaurant-info {
+        flex: 1;
+    }
+    
+    .restaurant-info h6 {
+        margin: 0 0 0.25rem 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .restaurant-info small {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .restaurant-revenue {
+        text-align: right;
+        font-weight: 600;
+        color: var(--success-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Métricas Principais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card primary">
+            <div class="metric-header">
+                <div>
+                    <div class="metric-value text-primary">{{ total_restaurantes|default:12 }}</div>
+                    <div class="metric-label">Total Restaurantes</div>
+                </div>
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                    <i class="fas fa-store"></i>
+                </div>
+            </div>
+            <div class="metric-change change-positive">
+                <i class="fas fa-arrow-up me-1"></i>
+                +8% este mês
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card success">
+            <div class="metric-header">
+                <div>
+                    <div class="metric-value text-success">{{ restaurantes_ativos|default:9 }}</div>
+                    <div class="metric-label">Restaurantes Ativos</div>
+                </div>
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--success-color), #2ecc71);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="metric-change change-positive">
+                <i class="fas fa-arrow-up me-1"></i>
+                +12% este mês
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card warning">
+            <div class="metric-header">
+                <div>
+                    <div class="metric-value text-warning">R$ {{ faturamento_total|default:"24.5k"|floatformat:0 }}</div>
+                    <div class="metric-label">Faturamento Mensal</div>
+                </div>
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--warning-color), var(--accent-color));">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+            </div>
+            <div class="metric-change change-positive">
+                <i class="fas fa-arrow-up me-1"></i>
+                +15% este mês
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card info">
+            <div class="metric-header">
+                <div>
+                    <div class="metric-value text-info">{{ total_pedidos|default:347 }}</div>
+                    <div class="metric-label">Pedidos Hoje</div>
+                </div>
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--info-color), #5dade2);">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+            <div class="metric-change change-negative">
+                <i class="fas fa-arrow-down me-1"></i>
+                -3% vs ontem
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="quick-actions mb-4">
+    <h5 class="mb-3">
+        <i class="fas fa-bolt me-2"></i>
+        Ações Rápidas
+    </h5>
+    <div class="d-flex flex-wrap">
+        <a href="#" class="action-btn">
+            <i class="fas fa-plus"></i>
+            Novo Restaurante
+        </a>
+        <a href="#" class="action-btn">
+            <i class="fas fa-user-plus"></i>
+            Novo Lojista
+        </a>
+        <a href="#" class="action-btn">
+            <i class="fas fa-credit-card"></i>
+            Gerenciar Planos
+        </a>
+        <a href="#" class="action-btn">
+            <i class="fas fa-chart-line"></i>
+            Relatório Completo
+        </a>
+        <a href="#" class="action-btn">
+            <i class="fas fa-cogs"></i>
+            Configurações
+        </a>
+    </div>
+</div>
+
+<!-- Gráficos e Informações -->
+<div class="row mb-4">
+    <!-- Gráfico de Performance -->
+    <div class="col-lg-8 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-area me-2"></i>
+                Performance dos Últimos 30 Dias
+            </h5>
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Saúde do Sistema -->
+    <div class="col-lg-4 mb-4">
+        <div class="system-health">
+            <h5 class="mb-3">
+                <i class="fas fa-heartbeat me-2"></i>
+                Saúde do Sistema
+            </h5>
+            <div class="health-item">
+                <span class="health-label">Servidor</span>
+                <span class="health-status status-excellent">Excelente</span>
+            </div>
+            <div class="health-item">
+                <span class="health-label">Base de Dados</span>
+                <span class="health-status status-good">Bom</span>
+            </div>
+            <div class="health-item">
+                <span class="health-label">API Response</span>
+                <span class="health-status status-excellent">Excelente</span>
+            </div>
+            <div class="health-item">
+                <span class="health-label">Armazenamento</span>
+                <span class="health-status status-good">Bom</span>
+            </div>
+            <div class="health-item">
+                <span class="health-label">Backup</span>
+                <span class="health-status status-warning">Atenção</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Segunda linha de informações -->
+<div class="row">
+    <!-- Top Restaurantes -->
+    <div class="col-lg-6 mb-4">
+        <div class="top-restaurants">
+            <h5 class="mb-3">
+                <i class="fas fa-trophy me-2"></i>
+                Top Restaurantes (Faturamento)
+            </h5>
+            
+            <div class="restaurant-item">
+                <div class="restaurant-avatar">PJ</div>
+                <div class="restaurant-info">
+                    <h6>Pizzaria do José</h6>
+                    <small>125 pedidos • Ativo há 8 meses</small>
+                </div>
+                <div class="restaurant-revenue">
+                    R$ 8.450
+                </div>
+            </div>
+            
+            <div class="restaurant-item">
+                <div class="restaurant-avatar">BH</div>
+                <div class="restaurant-info">
+                    <h6>Burger House</h6>
+                    <small>98 pedidos • Ativo há 6 meses</small>
+                </div>
+                <div class="restaurant-revenue">
+                    R$ 6.720
+                </div>
+            </div>
+            
+            <div class="restaurant-item">
+                <div class="restaurant-avatar">SZ</div>
+                <div class="restaurant-info">
+                    <h6>Sushi Zen</h6>
+                    <small>76 pedidos • Ativo há 4 meses</small>
+                </div>
+                <div class="restaurant-revenue">
+                    R$ 5.890
+                </div>
+            </div>
+            
+            <div class="restaurant-item">
+                <div class="restaurant-avatar">TD</div>
+                <div class="restaurant-info">
+                    <h6>Tacos Del Mar</h6>
+                    <small>54 pedidos • Ativo há 3 meses</small>
+                </div>
+                <div class="restaurant-revenue">
+                    R$ 3.240
+                </div>
+            </div>
+            
+            <div class="restaurant-item">
+                <div class="restaurant-avatar">CG</div>
+                <div class="restaurant-info">
+                    <h6>Café Gourmet</h6>
+                    <small>42 pedidos • Ativo há 2 meses</small>
+                </div>
+                <div class="restaurant-revenue">
+                    R$ 2.680
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Atividade Recente -->
+    <div class="col-lg-6 mb-4">
+        <div class="recent-activity">
+            <h5 class="mb-3">
+                <i class="fas fa-history me-2"></i>
+                Atividade Recente
+            </h5>
+            
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--success-color);">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="activity-content">
+                    <h6>Novo restaurante cadastrado</h6>
+                    <small>Café Gourmet foi aprovado e ativado • há 2 horas</small>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--primary-color);">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="activity-content">
+                    <h6>Novo lojista registrado</h6>
+                    <small>Maria Silva criou uma conta • há 4 horas</small>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--info-color);">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="activity-content">
+                    <h6>Upgrade de plano</h6>
+                    <small>Pizzaria do José migrou para o Plano Pro • há 6 horas</small>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--warning-color);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="activity-content">
+                    <h6>Problema de pagamento</h6>
+                    <small>Burger House com pendência financeira • há 8 horas</small>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--success-color);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="activity-content">
+                    <h6>Pagamento confirmado</h6>
+                    <small>Sushi Zen quitou mensalidade • há 1 dia</small>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--primary-color);">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="activity-content">
+                    <h6>Atualização do sistema</h6>
+                    <small>Versão 2.1.4 implantada com sucesso • há 2 dias</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Performance
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['1', '5', '10', '15', '20', '25', '30'],
+            datasets: [
+                {
+                    label: 'Pedidos',
+                    data: [120, 190, 300, 500, 200, 300, 450],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Faturamento (R$)',
+                    data: [1200, 1900, 3000, 5000, 2000, 3000, 4500],
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value > 1000 ? 'R$ ' + (value/1000) + 'k' : value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

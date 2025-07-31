@@ -1,0 +1,553 @@
+{% extends 'lojista/base.html' %}
+{% load static %}
+
+{% block title %}Lista de Pedidos - Sistema Menuly{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pedidos-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: none;
+    }
+
+    .pedido-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        border: none;
+        overflow: hidden;
+    }
+
+    .pedido-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .pedido-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .pedido-body {
+        padding: 1.5rem;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-pendente {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        color: #8B4513;
+    }
+
+    .status-confirmado {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #2E8B57;
+    }
+
+    .status-preparando {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+        color: #D2691E;
+    }
+
+    .status-entregue {
+        background: linear-gradient(135deg, #81ecec 0%, #74b9ff 100%);
+        color: #0984e3;
+    }
+
+    .status-cancelado {
+        background: linear-gradient(135deg, #fab1a0 0%, #fd79a8 100%);
+        color: #e17055;
+    }
+
+    .restaurant-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .price-tag {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .btn-filter {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-details {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-details:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        text-align: center;
+        border: none;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-form .form-select,
+    .filter-form .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .filter-form .form-select:focus,
+    .filter-form .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    @media (max-width: 768px) {
+        .pedidos-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .pedido-card {
+            margin-bottom: 1rem;
+        }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="pedidos-header fade-in">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-1">
+                    <i class="fas fa-shopping-cart me-3"></i>
+                    Gestão de Pedidos
+                </h1>
+                <p class="mb-0 opacity-75">
+                    Controle e acompanhe todos os pedidos dos seus restaurantes
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex justify-content-md-end justify-content-center gap-2 mt-3 mt-md-0">
+                    <a href="{% url 'lojista:pedidos_tempo_real' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-clock me-2"></i>Tempo Real
+                    </a>
+                    <a href="{% url 'lojista:dashboard_metricas' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-chart-bar me-2"></i>Métricas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas Rápidas -->
+    <div class="stats-grid fade-in">
+        <div class="stat-card">
+            <div class="stat-number text-primary">{{ pedidos|length }}</div>
+            <div class="stat-label">Pedidos Hoje</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number text-success">
+                {% for pedido in pedidos %}
+                    {% if pedido.status == 'entregue' %}{{ forloop.counter0|add:1 }}{% endif %}
+                {% empty %}0{% endfor %}
+            </div>
+            <div class="stat-label">Entregues</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number text-warning">
+                {% for pedido in pedidos %}
+                    {% if pedido.status == 'preparando' %}{{ forloop.counter0|add:1 }}{% endif %}
+                {% empty %}0{% endfor %}
+            </div>
+            <div class="stat-label">Preparando</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number text-info">R$ 
+                {% widthratio pedidos|length 1 1000 %},00
+            </div>
+            <div class="stat-label">Faturamento</div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card fade-in">
+        <form method="get" class="filter-form">
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-filter me-2"></i>Status
+                    </label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos os status</option>
+                        {% for status_code, status_name in status_choices %}
+                            <option value="{{ status_code }}" {% if filtros.status == status_code %}selected{% endif %}>
+                                {{ status_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-store me-2"></i>Restaurante
+                    </label>
+                    <select name="restaurante" class="form-select">
+                        <option value="">Todos os restaurantes</option>
+                        {% for restaurante in restaurantes %}
+                            <option value="{{ restaurante.id }}" {% if filtros.restaurante == restaurante.id|stringformat:"s" %}selected{% endif %}>
+                                {{ restaurante.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-calendar me-2"></i>Data
+                    </label>
+                    <input type="date" name="data" class="form-control" value="{{ request.GET.data }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-filter w-100">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Pedidos -->
+    <div class="row">
+        {% for pedido in pedidos %}
+        <div class="col-12 fade-in" style="animation-delay: {{ forloop.counter0|floatformat:1 }}s">
+            <div class="pedido-card">
+                <div class="pedido-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h5 class="mb-1 fw-bold">
+                                <i class="fas fa-receipt me-2 text-primary"></i>
+                                #{{ pedido.numero }}
+                            </h5>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ pedido.criado_em|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="restaurant-badge">
+                                <i class="fas fa-store me-2"></i>
+                                {{ pedido.restaurante.nome }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="status-badge status-{{ pedido.status }}">
+                                <i class="fas fa-circle me-2"></i>
+                                {{ pedido.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <div class="price-tag">
+                                R$ {{ pedido.total|floatformat:2 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pedido-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                Cliente
+                            </h6>
+                            <p class="mb-1">{{ pedido.cliente.nome }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-phone me-1"></i>
+                                {{ pedido.cliente.telefone|default:"Não informado" }}
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-map-marker-alt me-2 text-danger"></i>
+                                Endereço
+                            </h6>
+                            <p class="mb-0 text-muted">
+                                {{ pedido.endereco_entrega|default:"Balcão" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-8">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-utensils me-2 text-success"></i>
+                                Itens do Pedido
+                            </h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for item in pedido.itens.all|slice:":3" %}
+                                <span class="badge bg-light text-dark border">
+                                    {{ item.quantidade }}x {{ item.produto.nome }}
+                                </span>
+                                {% endfor %}
+                                {% if pedido.itens.count > 3 %}
+                                <span class="badge bg-secondary">
+                                    +{{ pedido.itens.count|add:"-3" }} mais
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="d-flex gap-2 justify-content-md-end justify-content-start mt-3 mt-md-0">
+                                <a href="{% url 'lojista:detalhes_pedido' pedido.numero %}" 
+                                   class="btn btn-details btn-sm">
+                                    <i class="fas fa-eye me-2"></i>Detalhes
+                                </a>
+                                {% if pedido.status != 'entregue' and pedido.status != 'cancelado' %}
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="atualizarStatus('{{ pedido.numero }}')">
+                                    <i class="fas fa-edit me-2"></i>Status
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="fas fa-shopping-cart"></i>
+                <h3 class="mt-3">Nenhum pedido encontrado</h3>
+                <p class="text-muted">
+                    {% if filtros.status or filtros.restaurante %}
+                        Não há pedidos que correspondam aos filtros selecionados.
+                        <br>
+                        <a href="{% url 'lojista:lista_pedidos' %}" class="btn btn-outline-primary mt-3">
+                            <i class="fas fa-refresh me-2"></i>Limpar Filtros
+                        </a>
+                    {% else %}
+                        Quando houver pedidos, eles aparecerão aqui.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginação (futura implementação) -->
+    {% if pedidos|length >= 50 %}
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Mostrando os 50 pedidos mais recentes. Use os filtros para encontrar pedidos específicos.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para atualizar status -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Atualizar Status do Pedido
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="statusForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="pedidoNumero" name="pedido_numero">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Novo Status:</label>
+                        <select id="novoStatus" name="novo_status" class="form-select">
+                            {% for status_code, status_name in status_choices %}
+                            <option value="{{ status_code }}">{{ status_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observações (opcional):</label>
+                        <textarea name="observacoes" class="form-control" rows="3" 
+                                  placeholder="Adicione uma observação sobre a mudança de status..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="salvarStatus()">
+                    <i class="fas fa-save me-2"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function atualizarStatus(numeroPedido) {
+    document.getElementById('pedidoNumero').value = numeroPedido;
+    new bootstrap.Modal(document.getElementById('statusModal')).show();
+}
+
+function salvarStatus() {
+    const form = document.getElementById('statusForm');
+    const formData = new FormData(form);
+    const numero = formData.get('pedido_numero');
+    
+    fetch(`{% url 'lojista:atualizar_status_pedido' '0' %}`.replace('0', numero), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+            
+            // Mostrar mensagem de sucesso
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                Status do pedido #${numero} atualizado com sucesso!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.pedidos-header'));
+            
+            // Recarregar página após 2 segundos
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            alert('Erro ao atualizar status: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar status do pedido');
+    });
+}
+
+// Auto-refresh a cada 30 segundos
+setInterval(() => {
+    // Só recarrega se não houver modais abertos
+    if (!document.querySelector('.modal.show')) {
+        location.reload();
+    }
+}, 30000);
+
+// Adicionar efeito de fade-in aos elementos
+document.addEventListener('DOMContentLoaded', function() {
+    const elements = document.querySelectorAll('.fade-in');
+    elements.forEach((el, index) => {
+        el.style.animationDelay = (index * 0.1) + 's';
+    });
+});
+</script>
+{% endblock %}

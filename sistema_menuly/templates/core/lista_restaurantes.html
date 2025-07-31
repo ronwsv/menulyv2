@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Restaurantes Parceiros - Menuly{% endblock %}
+
+{% block extra_css %}
+<style>
+    .restaurant-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .restaurant-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .restaurant-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-bottom: 3px solid #f8f9fa;
+    }
+    
+    .restaurant-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .status-open {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .status-closed {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .restaurant-info {
+        padding: 1.5rem;
+    }
+    
+    .restaurant-name {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .restaurant-description {
+        color: #6c757d;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .restaurant-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .delivery-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .delivery-info i {
+        margin-right: 5px;
+    }
+    
+    .restaurant-tags {
+        margin-bottom: 1rem;
+    }
+    
+    .tag {
+        display: inline-block;
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .visit-button {
+        width: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+        margin-bottom: 3rem;
+    }
+    
+    .search-bar {
+        max-width: 600px;
+        margin: 2rem auto 0;
+    }
+    
+    .filter-buttons {
+        margin-bottom: 2rem;
+    }
+    
+    .filter-btn {
+        margin: 0.25rem;
+        border-radius: 20px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 mb-3">Descubra Sabores Incríveis</h1>
+                <p class="lead mb-4">Encontre os melhores restaurantes da sua região e faça seu pedido online</p>
+                
+                <!-- Barra de Pesquisa -->
+                <div class="search-bar">
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control" placeholder="Buscar restaurantes, comidas..." id="searchInput">
+                        <div class="input-group-append">
+                            <button class="btn btn-light" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Filtros -->
+    <div class="filter-buttons text-center">
+        <button class="btn btn-outline-primary filter-btn active" data-filter="all">
+            <i class="fas fa-th-large"></i> Todos
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="pizza">
+            <i class="fas fa-pizza-slice"></i> Pizza
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="hamburger">
+            <i class="fas fa-hamburger"></i> Hambúrguer
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="japanese">
+            <i class="fas fa-fish"></i> Japonês
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="brazilian">
+            <i class="fas fa-utensils"></i> Brasileira
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="open">
+            <i class="fas fa-clock"></i> Abertos Agora
+        </button>
+    </div>
+
+    <!-- Lista de Restaurantes -->
+    {% if restaurantes %}
+    <div class="row" id="restaurantList">
+        {% for restaurante in restaurantes %}
+        <div class="col-lg-4 col-md-6 mb-4 restaurant-item" 
+             data-categories="{% for categoria in restaurante.categorias.all %}{{ categoria.nome|lower }} {% endfor %}"
+             data-status="{% if restaurante.aberto_agora %}open{% else %}closed{% endif %}">
+            <div class="card restaurant-card h-100">
+                <!-- Imagem do Restaurante -->
+                <div class="position-relative">
+                    {% if restaurante.imagem_capa %}
+                    <img src="{{ restaurante.imagem_capa.url }}" alt="{{ restaurante.nome }}" class="restaurant-image">
+                    {% else %}
+                    <div class="restaurant-image d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-store fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Status Badge -->
+                    <span class="restaurant-status {% if restaurante.aberto_agora %}status-open{% else %}status-closed{% endif %}">
+                        {% if restaurante.aberto_agora %}
+                            <i class="fas fa-clock"></i> Aberto
+                        {% else %}
+                            <i class="fas fa-clock"></i> Fechado
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <!-- Informações do Restaurante -->
+                <div class="restaurant-info">
+                    <h5 class="restaurant-name">{{ restaurante.nome }}</h5>
+                    
+                    <p class="restaurant-description">
+                        {{ restaurante.slogan|default:"Comida deliciosa para você!" }}
+                    </p>
+                    
+                    <!-- Meta Informações -->
+                    <div class="restaurant-meta">
+                        <div class="delivery-info">
+                            <i class="fas fa-motorcycle text-primary"></i>
+                            <span>R$ {{ restaurante.taxa_entrega|floatformat:2 }}</span>
+                        </div>
+                        <div class="delivery-info">
+                            <i class="fas fa-clock text-warning"></i>
+                            <span>{{ restaurante.tempo_estimado_entrega }} min</span>
+                        </div>
+                        <div class="delivery-info">
+                            <i class="fas fa-star text-warning"></i>
+                            <span>{{ restaurante.avaliacao_media|default:"5.0" }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tags/Categorias -->
+                    <div class="restaurant-tags">
+                        {% for categoria in restaurante.categorias.all|slice:":3" %}
+                        <span class="tag">{{ categoria.nome }}</span>
+                        {% endfor %}
+                        {% if restaurante.categorias.count > 3 %}
+                        <span class="tag">+{{ restaurante.categorias.count|add:"-3" }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Botão de Visitar -->
+                    <a href="/{{ restaurante.slug }}/" class="visit-button"
+                       style="background-color: {{ restaurante.cor_botoes|default:'#007bff' }}; color: white;">
+                        <i class="fas fa-utensils"></i> Ver Cardápio
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Estado Vazio -->
+    <div class="empty-state">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <i class="fas fa-store-slash"></i>
+                <h3>Nenhum Restaurante Encontrado</h3>
+                <p>Não encontramos restaurantes disponíveis no momento. Tente novamente mais tarde ou entre em contato conosco.</p>
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Voltar ao Início
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Call to Action para Lojistas -->
+    <div class="row mt-5 mb-5">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center py-5">
+                    <h3><i class="fas fa-store"></i> Tem um Restaurante?</h3>
+                    <p class="lead mb-4">Junte-se à nossa plataforma e comece a vender online hoje mesmo!</p>
+                    <a href="/lojista/" class="btn btn-light btn-lg">
+                        <i class="fas fa-rocket"></i> Começar Agora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sistema de Filtros
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const restaurantItems = document.querySelectorAll('.restaurant-item');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active de todos os botões
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            // Adiciona active ao botão clicado
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            
+            restaurantItems.forEach(item => {
+                if (filter === 'all') {
+                    item.style.display = 'block';
+                } else if (filter === 'open') {
+                    // Mostra apenas restaurantes abertos
+                    item.style.display = item.getAttribute('data-status') === 'open' ? 'block' : 'none';
+                } else {
+                    // Filtra por categoria
+                    const categories = item.getAttribute('data-categories').toLowerCase();
+                    item.style.display = categories.includes(filter) ? 'block' : 'none';
+                }
+            });
+        });
+    });
+    
+    // Sistema de Busca
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            
+            restaurantItems.forEach(item => {
+                const restaurantName = item.querySelector('.restaurant-name').textContent.toLowerCase();
+                const restaurantDescription = item.querySelector('.restaurant-description').textContent.toLowerCase();
+                const categories = item.getAttribute('data-categories').toLowerCase();
+                
+                const matches = restaurantName.includes(query) || 
+                              restaurantDescription.includes(query) || 
+                              categories.includes(query);
+                
+                item.style.display = matches ? 'block' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

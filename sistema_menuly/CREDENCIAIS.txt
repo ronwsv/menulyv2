@@ -1,0 +1,56 @@
+📋 SISTEMA MENULY - CREDENCIAIS DE ACESSO
+================================================================
+
+🔑 CREDENCIAIS PARA TESTE:
+
+👑 SUPER ADMIN / DJANGO ADMIN:
+   Usuário: admin
+   Senha: admin123
+   URLs: 
+   • Django Admin: http://localhost:8000/admin/
+   • Super Admin: http://localhost:8000/superadmin/
+
+🏪 LOJISTA (Dono dos Restaurantes):
+   Usuário: lojista_teste  
+   Senha: lojista123
+   URL: http://localhost:8000/lojista/
+
+👤 CLIENTE (Para fazer pedidos no checkout):
+   Nome: Maria Santos
+   Telefone: (11) 98765-4321
+   Email: cliente@teste.com
+   Endereço: Rua dos Clientes, 789 - Vila Cliente
+   CEP: 01234-999 - São Paulo/SP
+
+================================================================
+
+🌐 RESTAURANTES DISPONÍVEIS:
+
+🍕 PIZZARIA DO JOSÉ: 
+   URL: http://localhost:8000/pizzaria-do-jose/
+   Tema: Vermelho
+   Produtos: 7 itens em 3 categorias
+   Taxa entrega: R$ 5,00 | Tempo: 30 min
+
+🍔 BURGER HOUSE:
+   URL: http://localhost:8000/burger-house/  
+   Tema: Laranja
+   Produtos: 2 itens em 2 categorias
+   Taxa entrega: R$ 4,00 | Tempo: 25 min
+
+================================================================
+
+🎯 COMO TESTAR O SISTEMA COMPLETO:
+
+1. Execute: iniciar_sistema.bat
+2. Acesse: http://localhost:8000/pizzaria-do-jose/
+3. Adicione produtos ao carrinho
+4. Clique no ícone do carrinho (canto superior direito)
+5. Use os dados do cliente Maria Santos no checkout
+6. Finalize o pedido
+7. Acesse o painel do lojista para ver o pedido
+8. Teste também o Super Admin
+
+================================================================
+
+Sistema 100% funcional! ✅

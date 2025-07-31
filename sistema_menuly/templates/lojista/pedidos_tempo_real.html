@@ -1,0 +1,636 @@
+{% extends 'lojista/base.html' %}
+{% load static %}
+
+{% block title %}Pedidos em Tempo Real - {{ restaurante.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .orders-container {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+    
+    .order-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--primary-color);
+        margin-bottom: 1rem;
+        animation: fadeInScale 0.5s ease;
+    }
+    
+    .order-card.new-order {
+        animation: newOrderPulse 2s ease;
+        border-left-color: #28a745;
+    }
+    
+    .order-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+    
+    .status-recebido { background: linear-gradient(45deg, #ffc107, #fd7e14); color: white; }
+    .status-confirmado { background: linear-gradient(45deg, #17a2b8, #20c997); color: white; }
+    .status-preparando { background: linear-gradient(45deg, #fd7e14, #dc3545); color: white; }
+    .status-pronto { background: linear-gradient(45deg, #28a745, #20c997); color: white; }
+    .status-saiu_entrega { background: linear-gradient(45deg, #6f42c1, #e83e8c); color: white; }
+    .status-entregue { background: linear-gradient(45deg, #28a745, #17a2b8); color: white; }
+    .status-cancelado { background: linear-gradient(45deg, #6c757d, #495057); color: white; }
+    
+    .order-timer {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .timer-warning { color: #ffc107; }
+    .timer-danger { color: #dc3545; }
+    .timer-normal { color: #28a745; }
+    
+    .order-actions {
+        position: sticky;
+        bottom: 0;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(10px);
+        padding: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .stats-summary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .connection-status {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .connected { background: #28a745; color: white; }
+    .disconnected { background: #dc3545; color: white; }
+    .connecting { background: #ffc107; color: black; }
+    
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    @keyframes newOrderPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(40, 167, 69, 0.3); }
+    }
+    
+    .sound-controls {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    .btn-sound {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status connecting">
+        <i class="fas fa-circle me-1"></i>Conectando...
+    </div>
+
+    <!-- Header com estatísticas -->
+    <div class="stats-summary">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h3 id="totalPedidos" class="mb-0">{{ total_pedidos }}</h3>
+                    <small>Pedidos Hoje</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h3 id="pedidosPendentes" class="mb-0">{{ pedidos_pendentes }}</h3>
+                    <small>Pendentes</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h3 id="tempoMedio" class="mb-0">{{ tempo_medio }}min</h3>
+                    <small>Tempo Médio</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h3 id="faturamentoHoje" class="mb-0">R$ {{ faturamento_hoje }}</h3>
+                    <small>Faturamento Hoje</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros rápidos -->
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-filter="todos">
+                    Todos <span class="badge bg-primary ms-1" id="count-todos">{{ total_pedidos }}</span>
+                </button>
+                <button type="button" class="btn btn-outline-warning" data-filter="recebido">
+                    Novos <span class="badge bg-warning ms-1" id="count-recebido">0</span>
+                </button>
+                <button type="button" class="btn btn-outline-info" data-filter="preparando">
+                    Preparando <span class="badge bg-info ms-1" id="count-preparando">0</span>
+                </button>
+                <button type="button" class="btn btn-outline-success" data-filter="pronto">
+                    Prontos <span class="badge bg-success ms-1" id="count-pronto">0</span>
+                </button>
+            </div>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" onclick="refreshOrders()">
+                <i class="fas fa-sync-alt me-1"></i>Atualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Lista de pedidos -->
+    <div class="orders-container" id="ordersContainer">
+        {% for pedido in pedidos %}
+        <div class="card order-card" data-order-id="{{ pedido.id }}" data-status="{{ pedido.status }}">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-receipt me-2"></i>
+                                Pedido #{{ pedido.numero }}
+                            </h5>
+                            <span class="status-badge status-{{ pedido.status }}">
+                                {{ pedido.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <small class="text-muted">Cliente:</small>
+                                <div class="fw-bold">{{ pedido.cliente.nome }}</div>
+                                <small class="text-muted">{{ pedido.cliente.telefone }}</small>
+                            </div>
+                            <div class="col-sm-6">
+                                <small class="text-muted">Entrega:</small>
+                                <div class="fw-bold">{{ pedido.get_tipo_display }}</div>
+                                {% if pedido.tipo == 'delivery' %}
+                                <small class="text-muted">{{ pedido.endereco_entrega_bairro }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Itens do pedido -->
+                        <div class="mb-3">
+                            <small class="text-muted">Itens:</small>
+                            {% for item in pedido.itens.all %}
+                            <div class="d-flex justify-content-between">
+                                <span>{{ item.quantidade }}x {{ item.produto.nome }}</span>
+                                <span>R$ {{ item.subtotal }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if pedido.observacoes %}
+                        <div class="alert alert-info py-2">
+                            <small><i class="fas fa-sticky-note me-1"></i>{{ pedido.observacoes }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="order-timer timer-normal" data-created="{{ pedido.criado_em|date:'c' }}">
+                                <i class="fas fa-clock me-1"></i>
+                                <span class="timer-text">Calculando...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-3">
+                            <h4 class="text-primary mb-0">R$ {{ pedido.total }}</h4>
+                            <small class="text-muted">{{ pedido.get_forma_pagamento_display }}</small>
+                        </div>
+                        
+                        <!-- Ações do pedido -->
+                        <div class="d-grid gap-2">
+                            {% if pedido.status == 'recebido' %}
+                            <button class="btn btn-success btn-sm" onclick="updateOrderStatus({{ pedido.id }}, 'confirmado')">
+                                <i class="fas fa-check me-1"></i>Confirmar
+                            </button>
+                            {% elif pedido.status == 'confirmado' %}
+                            <button class="btn btn-warning btn-sm" onclick="updateOrderStatus({{ pedido.id }}, 'preparando')">
+                                <i class="fas fa-fire me-1"></i>Iniciar Preparo
+                            </button>
+                            {% elif pedido.status == 'preparando' %}
+                            <button class="btn btn-info btn-sm" onclick="updateOrderStatus({{ pedido.id }}, 'pronto')">
+                                <i class="fas fa-bell me-1"></i>Marcar Pronto
+                            </button>
+                            {% elif pedido.status == 'pronto' %}
+                            <button class="btn btn-primary btn-sm" onclick="updateOrderStatus({{ pedido.id }}, 'saiu_entrega')">
+                                <i class="fas fa-truck me-1"></i>Saiu Entrega
+                            </button>
+                            {% elif pedido.status == 'saiu_entrega' %}
+                            <button class="btn btn-success btn-sm" onclick="updateOrderStatus({{ pedido.id }}, 'entregue')">
+                                <i class="fas fa-check-circle me-1"></i>Entregue
+                            </button>
+                            {% endif %}
+                            
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm" onclick="printOrder({{ pedido.id }})">
+                                    <i class="fas fa-print me-1"></i>Imprimir
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="cancelOrder({{ pedido.id }})">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Nenhum pedido encontrado</h4>
+            <p class="text-muted">Os pedidos aparecerão aqui em tempo real.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Controles de som -->
+    <div class="sound-controls">
+        <button class="btn btn-primary btn-sound" id="soundToggle" onclick="toggleSound()">
+            <i class="fas fa-volume-up" id="soundIcon"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Audio para notificações -->
+<audio id="newOrderSound" preload="auto">
+    <source src="{% static 'sounds/new-order.mp3' %}" type="audio/mpeg">
+    <source src="{% static 'sounds/new-order.wav' %}" type="audio/wav">
+</audio>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configurações globais
+let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+let currentFilter = 'todos';
+let socket = null;
+let reconnectInterval = null;
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTimers();
+    initializeFilters();
+    initializeWebSocket();
+    updateSoundIcon();
+});
+
+// WebSocket para atualizações em tempo real
+function initializeWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/orders/{{ restaurante.id }}/`;
+    
+    socket = new WebSocket(wsUrl);
+    
+    socket.onopen = function(e) {
+        console.log('WebSocket conectado');
+        updateConnectionStatus('connected');
+        if (reconnectInterval) {
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+        }
+    };
+    
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        handleWebSocketMessage(data);
+    };
+    
+    socket.onclose = function(e) {
+        console.log('WebSocket desconectado');
+        updateConnectionStatus('disconnected');
+        // Tentar reconectar
+        reconnectInterval = setInterval(() => {
+            updateConnectionStatus('connecting');
+            initializeWebSocket();
+        }, 5000);
+    };
+    
+    socket.onerror = function(e) {
+        console.error('Erro no WebSocket:', e);
+        updateConnectionStatus('disconnected');
+    };
+}
+
+// Atualizar status da conexão
+function updateConnectionStatus(status) {
+    const statusEl = document.getElementById('connectionStatus');
+    statusEl.className = `connection-status ${status}`;
+    
+    const statusText = {
+        'connected': 'Conectado',
+        'disconnected': 'Desconectado',
+        'connecting': 'Conectando...'
+    };
+    
+    statusEl.innerHTML = `<i class="fas fa-circle me-1"></i>${statusText[status]}`;
+}
+
+// Processar mensagens do WebSocket
+function handleWebSocketMessage(data) {
+    switch(data.type) {
+        case 'new_order':
+            addNewOrder(data.order);
+            if (soundEnabled) {
+                playNewOrderSound();
+            }
+            break;
+        case 'order_updated':
+            updateOrderInList(data.order);
+            break;
+        case 'order_cancelled':
+            removeOrder(data.order_id);
+            break;
+        case 'stats_update':
+            updateStats(data.stats);
+            break;
+    }
+}
+
+// Adicionar novo pedido à lista
+function addNewOrder(orderData) {
+    const orderCard = createOrderCard(orderData);
+    orderCard.classList.add('new-order');
+    
+    const container = document.getElementById('ordersContainer');
+    container.insertBefore(orderCard, container.firstChild);
+    
+    updateFilterCounts();
+    applyCurrentFilter();
+}
+
+// Atualizar pedido existente
+function updateOrderInList(orderData) {
+    const existingCard = document.querySelector(`[data-order-id="${orderData.id}"]`);
+    if (existingCard) {
+        const newCard = createOrderCard(orderData);
+        existingCard.replaceWith(newCard);
+        updateFilterCounts();
+        applyCurrentFilter();
+    }
+}
+
+// Remover pedido da lista
+function removeOrder(orderId) {
+    const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+    if (orderCard) {
+        orderCard.style.animation = 'fadeOut 0.5s ease';
+        setTimeout(() => {
+            orderCard.remove();
+            updateFilterCounts();
+        }, 500);
+    }
+}
+
+// Criar card de pedido
+function createOrderCard(orderData) {
+    // Esta função criaria o HTML do card baseado nos dados
+    // Por simplicidade, vou usar um template básico
+    const div = document.createElement('div');
+    div.className = 'card order-card';
+    div.setAttribute('data-order-id', orderData.id);
+    div.setAttribute('data-status', orderData.status);
+    div.innerHTML = `<!-- HTML do card seria gerado aqui -->`;
+    return div;
+}
+
+// Atualizar estatísticas
+function updateStats(stats) {
+    document.getElementById('totalPedidos').textContent = stats.total_pedidos;
+    document.getElementById('pedidosPendentes').textContent = stats.pedidos_pendentes;
+    document.getElementById('tempoMedio').textContent = stats.tempo_medio + 'min';
+    document.getElementById('faturamentoHoje').textContent = 'R$ ' + stats.faturamento_hoje;
+}
+
+// Inicializar timers dos pedidos
+function initializeTimers() {
+    document.querySelectorAll('.order-timer').forEach(timer => {
+        updateTimer(timer);
+        setInterval(() => updateTimer(timer), 1000);
+    });
+}
+
+// Atualizar timer individual
+function updateTimer(timerEl) {
+    const createdAt = new Date(timerEl.getAttribute('data-created'));
+    const now = new Date();
+    const diffMinutes = Math.floor((now - createdAt) / 60000);
+    
+    const timerText = timerEl.querySelector('.timer-text');
+    timerText.textContent = `${diffMinutes}min`;
+    
+    // Atualizar cor baseado no tempo
+    timerEl.className = 'order-timer';
+    if (diffMinutes > 45) {
+        timerEl.classList.add('timer-danger');
+    } else if (diffMinutes > 30) {
+        timerEl.classList.add('timer-warning');
+    } else {
+        timerEl.classList.add('timer-normal');
+    }
+}
+
+// Inicializar filtros
+function initializeFilters() {
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            setFilter(filter);
+            
+            // Atualizar botões ativos
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    updateFilterCounts();
+}
+
+// Definir filtro
+function setFilter(filter) {
+    currentFilter = filter;
+    applyCurrentFilter();
+}
+
+// Aplicar filtro atual
+function applyCurrentFilter() {
+    document.querySelectorAll('.order-card').forEach(card => {
+        const status = card.getAttribute('data-status');
+        if (currentFilter === 'todos' || status === currentFilter) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Atualizar contadores dos filtros
+function updateFilterCounts() {
+    const counts = {
+        todos: 0,
+        recebido: 0,
+        preparando: 0,
+        pronto: 0
+    };
+    
+    document.querySelectorAll('.order-card').forEach(card => {
+        const status = card.getAttribute('data-status');
+        counts.todos++;
+        if (counts[status] !== undefined) {
+            counts[status]++;
+        }
+    });
+    
+    Object.keys(counts).forEach(status => {
+        const badge = document.getElementById(`count-${status}`);
+        if (badge) {
+            badge.textContent = counts[status];
+        }
+    });
+}
+
+// Funções de ação
+function updateOrderStatus(orderId, newStatus) {
+    fetch(`/lojista/pedido/${orderId}/status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({status: newStatus})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // A atualização será feita via WebSocket
+        } else {
+            alert('Erro ao atualizar status: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar status do pedido');
+    });
+}
+
+function printOrder(orderId) {
+    fetch(`/lojista/pedido/${orderId}/imprimir/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            alert('Pedido enviado para impressão!');
+        } else {
+            alert('Erro ao imprimir: ' + data.erro);
+        }
+    });
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Tem certeza que deseja cancelar este pedido?')) {
+        updateOrderStatus(orderId, 'cancelado');
+    }
+}
+
+function refreshOrders() {
+    location.reload();
+}
+
+// Controles de som
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('soundEnabled', soundEnabled);
+    updateSoundIcon();
+}
+
+function updateSoundIcon() {
+    const icon = document.getElementById('soundIcon');
+    icon.className = soundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+}
+
+function playNewOrderSound() {
+    const audio = document.getElementById('newOrderSound');
+    audio.play().catch(e => console.log('Erro ao tocar som:', e));
+}
+
+// Utilitários
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// CSS adicional para animações
+const additionalStyles = `
+    @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.95); }
+    }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock %}

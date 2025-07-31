@@ -1,0 +1,630 @@
+{% extends 'lojista/base.html' %}
+{% load static %}
+
+{% block title %}Pedido #{{ pedido.numero }} - Sistema Menuly{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pedido-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .status-badge {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+
+    .status-pendente {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        color: #8B4513;
+    }
+
+    .status-confirmado {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #2E8B57;
+    }
+
+    .status-preparando {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+        color: #D2691E;
+    }
+
+    .status-entregue {
+        background: linear-gradient(135deg, #81ecec 0%, #74b9ff 100%);
+        color: #0984e3;
+    }
+
+    .status-cancelado {
+        background: linear-gradient(135deg, #fab1a0 0%, #fd79a8 100%);
+        color: #e17055;
+    }
+
+    .restaurant-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .price-total {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 15px;
+        font-weight: bold;
+        font-size: 1.5rem;
+        text-align: center;
+    }
+
+    .item-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .item-card:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #667eea, #764ba2);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.75rem;
+        top: 1rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #667eea;
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px #667eea;
+    }
+
+    .btn-action {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        color: white;
+    }
+
+    .btn-print {
+        background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-print:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 118, 117, 0.4);
+        color: white;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .info-value {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.6s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .pedido-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .timeline {
+            padding-left: 1.5rem;
+        }
+        
+        .timeline::before {
+            left: 0.75rem;
+        }
+        
+        .timeline-item::before {
+            left: -1.25rem;
+        }
+    }
+
+    .print-section {
+        display: none;
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .print-section {
+            display: block !important;
+        }
+        
+        .info-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+        
+        .pedido-header {
+            background: #667eea !important;
+            color: white !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="pedido-header fade-in no-print">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-1">
+                    <i class="fas fa-receipt me-3"></i>
+                    Pedido #{{ pedido.numero }}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-clock me-2"></i>
+                    Realizado em {{ pedido.criado_em|date:"d/m/Y às H:i" }}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex justify-content-md-end justify-content-center gap-2 mt-3 mt-md-0">
+                    <a href="{% url 'lojista:lista_pedidos' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                    <button onclick="window.print()" class="btn btn-light btn-sm">
+                        <i class="fas fa-print me-2"></i>Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações Principais -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Status e Restaurante -->
+            <div class="info-card fade-in">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <span class="info-label">
+                            <i class="fas fa-info-circle me-2"></i>Status do Pedido
+                        </span>
+                        <span class="status-badge status-{{ pedido.status }}">
+                            <i class="fas fa-circle me-2"></i>
+                            {{ pedido.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="info-label">
+                            <i class="fas fa-store me-2"></i>Restaurante
+                        </span>
+                        <div class="restaurant-badge">
+                            {{ pedido.restaurante.nome }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados do Cliente -->
+            <div class="info-card fade-in">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-user me-2 text-primary"></i>
+                    Dados do Cliente
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="info-label">Nome:</span>
+                        <div class="info-value">{{ pedido.cliente.nome }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="info-label">Telefone:</span>
+                        <div class="info-value">
+                            {{ pedido.cliente.telefone|default:"Não informado" }}
+                        </div>
+                    </div>
+                </div>
+                {% if pedido.cliente.email %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <span class="info-label">E-mail:</span>
+                        <div class="info-value">{{ pedido.cliente.email }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Endereço de Entrega -->
+            <div class="info-card fade-in">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-map-marker-alt me-2 text-danger"></i>
+                    Endereço de Entrega
+                </h5>
+                <div class="info-value">
+                    {% if pedido.endereco_entrega %}
+                        {{ pedido.endereco_entrega }}
+                    {% else %}
+                        <span class="text-muted">
+                            <i class="fas fa-store me-2"></i>
+                            Retirada no balcão
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Itens do Pedido -->
+            <div class="info-card fade-in">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-utensils me-2 text-success"></i>
+                    Itens do Pedido
+                </h5>
+                {% for item in pedido.itens.all %}
+                <div class="item-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6 class="mb-1 fw-bold">{{ item.produto.nome }}</h6>
+                            {% if item.observacoes %}
+                            <small class="text-muted">
+                                <i class="fas fa-comment me-1"></i>
+                                {{ item.observacoes }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <span class="badge bg-primary">
+                                {{ item.quantidade }}x
+                            </span>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <strong>R$ {{ item.preco_unitario|floatformat:2 }}</strong>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <strong class="text-success">
+                                R$ {{ item.subtotal|floatformat:2 }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Observações Gerais -->
+            {% if pedido.observacoes %}
+            <div class="info-card fade-in">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-sticky-note me-2 text-warning"></i>
+                    Observações
+                </h5>
+                <div class="info-value">
+                    {{ pedido.observacoes }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <!-- Total do Pedido -->
+            <div class="info-card fade-in">
+                <h5 class="mb-3 fw-bold text-center">
+                    <i class="fas fa-calculator me-2"></i>
+                    Resumo do Pedido
+                </h5>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <strong>R$ {{ pedido.subtotal|floatformat:2 }}</strong>
+                </div>
+                
+                {% if pedido.taxa_entrega > 0 %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Taxa de Entrega:</span>
+                    <strong>R$ {{ pedido.taxa_entrega|floatformat:2 }}</strong>
+                </div>
+                {% endif %}
+                
+                {% if pedido.desconto > 0 %}
+                <div class="d-flex justify-content-between mb-2 text-success">
+                    <span>Desconto:</span>
+                    <strong>- R$ {{ pedido.desconto|floatformat:2 }}</strong>
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="price-total">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    R$ {{ pedido.total|floatformat:2 }}
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="info-card fade-in no-print">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-cogs me-2"></i>
+                    Ações
+                </h5>
+                
+                {% if pedido.status != 'entregue' and pedido.status != 'cancelado' %}
+                <button class="btn btn-action w-100 mb-2" onclick="atualizarStatus()">
+                    <i class="fas fa-edit me-2"></i>
+                    Atualizar Status
+                </button>
+                {% endif %}
+                
+                <a href="{% url 'lojista:imprimir_pedido' pedido.id %}" class="btn btn-print w-100 mb-2">
+                    <i class="fas fa-print me-2"></i>
+                    Imprimir Comprovante
+                </a>
+                
+                <a href="{% url 'lojista:lista_pedidos' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-list me-2"></i>
+                    Todos os Pedidos
+                </a>
+            </div>
+
+            <!-- Timeline do Pedido -->
+            <div class="info-card fade-in">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-history me-2"></i>
+                    Histórico
+                </h5>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Pedido Criado</strong>
+                                <div class="text-muted small">
+                                    Cliente realizou o pedido
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ pedido.criado_em|date:"H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    {% if pedido.status != 'pendente' %}
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Status: {{ pedido.get_status_display }}</strong>
+                                <div class="text-muted small">
+                                    Pedido atualizado
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ pedido.atualizado_em|date:"H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if pedido.status == 'entregue' %}
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="text-success">Pedido Entregue</strong>
+                                <div class="text-muted small">
+                                    Entrega realizada com sucesso
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ pedido.atualizado_em|date:"H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para atualizar status -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Atualizar Status do Pedido #{{ pedido.numero }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="statusForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Status Atual:</label>
+                        <div class="status-badge status-{{ pedido.status }}">
+                            {{ pedido.get_status_display }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Novo Status:</label>
+                        <select id="novoStatus" name="novo_status" class="form-select">
+                            {% for status_code, status_name in pedido.STATUS_CHOICES %}
+                            <option value="{{ status_code }}" {% if status_code == pedido.status %}selected{% endif %}>
+                                {{ status_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observações (opcional):</label>
+                        <textarea name="observacoes" class="form-control" rows="3" 
+                                  placeholder="Adicione uma observação sobre a mudança de status..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="salvarStatus()">
+                    <i class="fas fa-save me-2"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de impressão -->
+<div class="print-section">
+    <div class="text-center mb-4">
+        <h2>{{ pedido.restaurante.nome }}</h2>
+        <h4>Pedido #{{ pedido.numero }}</h4>
+        <p>{{ pedido.criado_em|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-6">
+            <strong>Cliente:</strong> {{ pedido.cliente.nome }}<br>
+            <strong>Telefone:</strong> {{ pedido.cliente.telefone|default:"N/A" }}<br>
+        </div>
+        <div class="col-6">
+            <strong>Status:</strong> {{ pedido.get_status_display }}<br>
+            <strong>Total:</strong> R$ {{ pedido.total|floatformat:2 }}<br>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <h5>Itens:</h5>
+    {% for item in pedido.itens.all %}
+    <div class="d-flex justify-content-between">
+        <span>{{ item.quantidade }}x {{ item.produto.nome }}</span>
+        <span>R$ {{ item.subtotal|floatformat:2 }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function atualizarStatus() {
+    new bootstrap.Modal(document.getElementById('statusModal')).show();
+}
+
+function salvarStatus() {
+    const form = document.getElementById('statusForm');
+    const formData = new FormData(form);
+    
+    fetch("{% url 'lojista:atualizar_status_pedido' pedido.numero %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+            
+            // Mostrar mensagem de sucesso
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                Status do pedido atualizado com sucesso!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.pedido-header'));
+            
+            // Recarregar página após 2 segundos
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            alert('Erro ao atualizar status: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar status do pedido');
+    });
+}
+</script>
+{% endblock %}
