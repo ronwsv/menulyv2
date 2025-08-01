@@ -1,0 +1,26 @@
+# Django Framework
+Django==5.2.4
+
+# Imagens e thumbnails
+Pillow==10.0.0
+django-imagekit==5.0.0
+
+# Banco de dados
+psycopg2-binary==2.9.7
+
+# Utilitários
+python-decouple==3.8
+requests==2.31.0
+
+# Desenvolvimento
+django-debug-toolbar==4.2.0
+
+# Produção
+gunicorn==21.2.0
+whitenoise==6.5.0
+
+# APIs e integração
+djangorestframework==3.14.0
+
+# Segurança
+django-cors-headers==4.3.0
