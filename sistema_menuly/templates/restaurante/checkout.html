@@ -1,0 +1,697 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Finalizar Pedido - {{ restaurante.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.checkout-container {
+    background: #f8f9fa;
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.checkout-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin: 0 10px;
+    position: relative;
+}
+
+.step.active {
+    background: var(--cor-principal);
+    color: white;
+}
+
+.step.completed {
+    background: #28a745;
+    color: white;
+}
+
+.step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: 20px;
+    height: 2px;
+    background: #e9ecef;
+    margin-left: 10px;
+}
+
+.step.completed:not(:last-child)::after {
+    background: #28a745;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+}
+
+.form-control:focus {
+    border-color: var(--cor-principal);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.payment-option {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.payment-option:hover {
+    border-color: var(--cor-principal);
+    transform: translateY(-2px);
+}
+
+.payment-option.selected {
+    border-color: var(--cor-principal);
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.payment-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--cor-principal);
+}
+
+.order-summary {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 20px;
+}
+
+.total-section {
+    border-top: 2px solid #e9ecef;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.item-quantity {
+    background: var(--cor-principal);
+    color: white;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <div class="container">
+        <!-- Indicador de Passos -->
+        <div class="step-indicator">
+            <div class="step active" id="step-indicator-1">1</div>
+            <div class="step" id="step-indicator-2">2</div>
+            <div class="step" id="step-indicator-3">3</div>
+            <div class="step" id="step-indicator-4">4</div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Passo 1: Dados do Cliente -->
+                <div class="checkout-card" id="step-cliente">
+                    <h3 class="mb-4">
+                        <i class="fas fa-user text-primary me-2"></i>
+                        Seus Dados
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Celular *</label>
+                                <input type="tel" 
+                                       id="celular" 
+                                       name="celular" 
+                                       class="form-control" 
+                                       placeholder="(11) 99999-9999"
+                                       required>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Digite seu celular para buscar dados anteriores
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Nome Completo *</label>
+                                <input type="text" 
+                                       id="nome" 
+                                       name="nome" 
+                                       class="form-control" 
+                                       placeholder="Seu nome completo"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email (opcional)</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               class="form-control" 
+                               placeholder="seu@email.com">
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="button" class="btn btn-primary" onclick="proximoPasso(2)">
+                            Continuar
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Passo 2: Endereço -->
+                <div class="checkout-card d-none" id="step-endereco">
+                    <h3 class="mb-4">
+                        <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                        Endereço de Entrega
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">CEP *</label>
+                                <input type="text" 
+                                       id="cep" 
+                                       name="cep" 
+                                       class="form-control" 
+                                       placeholder="00000-000"
+                                       maxlength="9"
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label class="form-label">Rua *</label>
+                                <input type="text" 
+                                       id="rua" 
+                                       name="rua" 
+                                       class="form-control" 
+                                       placeholder="Nome da rua"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label">Número *</label>
+                                <input type="text" 
+                                       id="numero" 
+                                       name="numero" 
+                                       class="form-control" 
+                                       placeholder="123"
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-group">
+                                <label class="form-label">Complemento</label>
+                                <input type="text" 
+                                       id="complemento" 
+                                       name="complemento" 
+                                       class="form-control" 
+                                       placeholder="Apto, bloco, etc.">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Bairro *</label>
+                        <input type="text" 
+                               id="bairro" 
+                               name="bairro" 
+                               class="form-control" 
+                               placeholder="Nome do bairro"
+                               required>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-primary" onclick="voltarPasso(1)">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Voltar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="proximoPasso(3)">
+                            Continuar
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Passo 3: Pagamento -->
+                <div class="checkout-card d-none" id="step-pagamento">
+                    <h3 class="mb-4">
+                        <i class="fas fa-credit-card text-primary me-2"></i>
+                        Forma de Pagamento
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="payment-option" data-payment="dinheiro">
+                                <div class="payment-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <h6>Dinheiro</h6>
+                                <small class="text-muted">Pagar na entrega</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="payment-option" data-payment="pix">
+                                <div class="payment-icon">
+                                    <i class="fab fa-pix"></i>
+                                </div>
+                                <h6>PIX</h6>
+                                <small class="text-muted">Pagamento instantâneo</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="payment-option" data-payment="cartao_debito">
+                                <div class="payment-icon">
+                                    <i class="fas fa-credit-card"></i>
+                                </div>
+                                <h6>Cartão Débito</h6>
+                                <small class="text-muted">Na entrega</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="payment-option" data-payment="cartao_credito">
+                                <div class="payment-icon">
+                                    <i class="far fa-credit-card"></i>
+                                </div>
+                                <h6>Cartão Crédito</h6>
+                                <small class="text-muted">Na entrega</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label class="form-label">Observações</label>
+                        <textarea id="observacoes" 
+                                  name="observacoes" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Observações sobre o pedido..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-primary" onclick="voltarPasso(2)">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Voltar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="proximoPasso(4)">
+                            Continuar
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Passo 4: Confirmação -->
+                <div class="checkout-card d-none" id="step-confirmacao">
+                    <h3 class="mb-4">
+                        <i class="fas fa-check-circle text-primary me-2"></i>
+                        Confirmar Pedido
+                    </h3>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Revise todos os dados antes de finalizar o pedido.
+                    </div>
+                    
+                    <div id="resumo-pedido">
+                        <!-- Será preenchido via JavaScript -->
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-primary" onclick="voltarPasso(3)">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Voltar
+                        </button>
+                        <button type="button" class="btn btn-success btn-lg" onclick="finalizarPedido()">
+                            <i class="fas fa-check me-2"></i>
+                            Finalizar Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumo do Pedido -->
+            <div class="col-lg-4">
+                <div class="order-summary">
+                    <h4 class="mb-4">
+                        <i class="fas fa-shopping-cart text-primary me-2"></i>
+                        Resumo do Pedido
+                    </h4>
+                    
+                    <div id="cart-items">
+                        <!-- Itens do carrinho -->
+                    </div>
+                    
+                    <div class="total-section">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">R$ 0,00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Taxa de Entrega:</span>
+                            <span>R$ {{ restaurante.taxa_entrega|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total:</strong>
+                            <strong id="total-pedido" class="text-success">R$ 0,00</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="text-muted">
+                            <i class="fas fa-clock me-2"></i>
+                            Tempo estimado: {{ restaurante.tempo_estimado_entrega }} min
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variáveis globais
+let currentStep = 1;
+let carrinho = JSON.parse(localStorage.getItem('carrinho_{{ restaurante.id }}') || '[]');
+let selectedPayment = '';
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🛒 Checkout carregado - Carrinho:', carrinho);
+    
+    // Verificar se o carrinho está vazio
+    if (carrinho.length === 0) {
+        document.querySelector('.checkout-container').innerHTML = `
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="checkout-card text-center">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h3 class="mb-3">Carrinho Vazio</h3>
+                            <p class="text-muted mb-4">Adicione produtos ao seu carrinho antes de finalizar o pedido.</p>
+                            <a href="{% url 'restaurante:menu' slug=restaurante.slug %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar ao Cardápio
+                            </a>
+                            <div class="mt-4">
+                                <hr>
+                                <button onclick="criarCarrinhoTeste()" class="btn btn-outline-secondary btn-sm">
+                                    Criar Carrinho de Teste
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    carregarCarrinho();
+    configurarEventos();
+    configurarMascaras();
+});
+
+function criarCarrinhoTeste() {
+    const carrinhoTeste = [
+        {
+            id: 1,
+            nome: "Pizza Margherita",
+            preco: 32.90,
+            quantidade: 1,
+            subtotal: 32.90
+        },
+        {
+            id: 2,
+            nome: "Pizza Calabresa",
+            preco: 35.90,
+            quantidade: 1,
+            subtotal: 35.90
+        }
+    ];
+    
+    localStorage.setItem('carrinho_{{ restaurante.id }}', JSON.stringify(carrinhoTeste));
+    location.reload();
+}
+
+function carregarCarrinho() {
+    const cartItemsEl = document.getElementById('cart-items');
+    const subtotalEl = document.getElementById('subtotal');
+    const totalEl = document.getElementById('total-pedido');
+    
+    let html = '';
+    let subtotal = 0;
+    
+    carrinho.forEach(item => {
+        subtotal += item.subtotal;
+        html += `
+            <div class="cart-item">
+                <div class="d-flex align-items-center">
+                    <div class="item-quantity">${item.quantidade}</div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${item.nome}</h6>
+                        <small class="text-muted">R$ ${item.preco.toFixed(2)} cada</small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <strong>R$ ${item.subtotal.toFixed(2)}</strong>
+                </div>
+            </div>
+        `;
+    });
+    
+    cartItemsEl.innerHTML = html;
+    subtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
+    
+    const taxaEntrega = {{ restaurante.taxa_entrega|default:0 }};
+    const total = subtotal + taxaEntrega;
+    totalEl.textContent = `R$ ${total.toFixed(2)}`;
+}
+
+function configurarEventos() {
+    // Seleção de forma de pagamento
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedPayment = this.dataset.payment;
+        });
+    });
+}
+
+function configurarMascaras() {
+    // Máscara de celular
+    const celularInput = document.getElementById('celular');
+    celularInput.addEventListener('input', function(e) {
+        let valor = e.target.value.replace(/\D/g, '');
+        valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+        valor = valor.replace(/(\d)(\d{4})$/, '$1-$2');
+        e.target.value = valor;
+    });
+    
+    // Máscara de CEP
+    const cepInput = document.getElementById('cep');
+    cepInput.addEventListener('input', function(e) {
+        let valor = e.target.value.replace(/\D/g, '');
+        valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
+        e.target.value = valor;
+        
+        if (valor.replace(/\D/g, '').length === 8) {
+            buscarEnderecoPorCep(valor);
+        }
+    });
+}
+
+async function buscarEnderecoPorCep(cep) {
+    const cepLimpo = cep.replace(/\D/g, '');
+    
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+            document.getElementById('rua').value = data.logradouro;
+            document.getElementById('bairro').value = data.bairro;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+    }
+}
+
+function proximoPasso(step) {
+    if (validarPassoAtual()) {
+        atualizarPasso(step);
+    }
+}
+
+function voltarPasso(step) {
+    atualizarPasso(step);
+}
+
+function atualizarPasso(step) {
+    // Ocultar todos os passos
+    document.querySelectorAll('[id^="step-"]').forEach(el => {
+        el.classList.add('d-none');
+    });
+    
+    // Atualizar indicadores
+    document.querySelectorAll('.step').forEach((el, index) => {
+        el.classList.remove('active', 'completed');
+        if (index + 1 < step) {
+            el.classList.add('completed');
+        } else if (index + 1 === step) {
+            el.classList.add('active');
+        }
+    });
+    
+    // Mostrar passo atual
+    const stepElements = {
+        1: 'step-cliente',
+        2: 'step-endereco',
+        3: 'step-pagamento',
+        4: 'step-confirmacao'
+    };
+    
+    document.getElementById(stepElements[step]).classList.remove('d-none');
+    currentStep = step;
+    
+    if (step === 4) {
+        gerarResumo();
+    }
+}
+
+function validarPassoAtual() {
+    switch (currentStep) {
+        case 1:
+            const celular = document.getElementById('celular').value;
+            const nome = document.getElementById('nome').value;
+            if (!celular || !nome) {
+                alert('Preencha celular e nome para continuar.');
+                return false;
+            }
+            break;
+        case 2:
+            const cep = document.getElementById('cep').value;
+            const rua = document.getElementById('rua').value;
+            const numero = document.getElementById('numero').value;
+            const bairro = document.getElementById('bairro').value;
+            if (!cep || !rua || !numero || !bairro) {
+                alert('Preencha todos os campos obrigatórios do endereço.');
+                return false;
+            }
+            break;
+        case 3:
+            if (!selectedPayment) {
+                alert('Selecione uma forma de pagamento.');
+                return false;
+            }
+            break;
+    }
+    return true;
+}
+
+function gerarResumo() {
+    const resumoEl = document.getElementById('resumo-pedido');
+    
+    const nome = document.getElementById('nome').value;
+    const celular = document.getElementById('celular').value;
+    const email = document.getElementById('email').value;
+    const cep = document.getElementById('cep').value;
+    const rua = document.getElementById('rua').value;
+    const numero = document.getElementById('numero').value;
+    const complemento = document.getElementById('complemento').value;
+    const bairro = document.getElementById('bairro').value;
+    
+    const paymentLabels = {
+        'dinheiro': 'Dinheiro (pagar na entrega)',
+        'pix': 'PIX (pagamento instantâneo)',
+        'cartao_debito': 'Cartão de Débito (na entrega)',
+        'cartao_credito': 'Cartão de Crédito (na entrega)'
+    };
+    
+    resumoEl.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Dados do Cliente</h6>
+                <p><strong>Nome:</strong> ${nome}<br>
+                <strong>Celular:</strong> ${celular}<br>
+                ${email ? `<strong>Email:</strong> ${email}<br>` : ''}</p>
+                
+                <h6>Endereço de Entrega</h6>
+                <p>${rua}, ${numero}${complemento ? ' - ' + complemento : ''}<br>
+                ${bairro} - CEP: ${cep}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Pagamento</h6>
+                <p><strong>${paymentLabels[selectedPayment]}</strong></p>
+            </div>
+        </div>
+    `;
+}
+
+async function finalizarPedido() {
+    alert('Pedido finalizado com sucesso! (Funcionalidade de exemplo)');
+}
+</script>
+{% endblock %}

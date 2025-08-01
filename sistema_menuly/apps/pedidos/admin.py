@@ -3,7 +3,7 @@ Admin para o sistema de pedidos.
 """
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Cliente, Pedido, ItemPedido
+from .models import Pedido, ItemPedido
 
 
 class ItemPedidoInline(admin.TabularInline):
@@ -14,37 +14,6 @@ class ItemPedidoInline(admin.TabularInline):
     def subtotal_display(self, obj):
         return f"R$ {obj.subtotal:.2f}"
     subtotal_display.short_description = 'Subtotal'
-
-
-@admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'telefone', 'email', 'cidade_estado', 'criado_em']
-    list_filter = ['endereco_cidade', 'endereco_estado', 'criado_em']
-    search_fields = ['nome', 'telefone', 'email']
-    readonly_fields = ['criado_em']
-    
-    fieldsets = (
-        ('Informações Pessoais', {
-            'fields': ('nome', 'telefone', 'email')
-        }),
-        ('Endereço Padrão', {
-            'fields': (
-                'endereco_rua', 'endereco_numero', 'endereco_complemento',
-                'endereco_bairro', 'endereco_cidade', 'endereco_estado',
-                'endereco_cep', 'endereco_referencia'
-            )
-        }),
-        ('Meta Dados', {
-            'fields': ('criado_em',),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def cidade_estado(self, obj):
-        if obj.endereco_cidade and obj.endereco_estado:
-            return f"{obj.endereco_cidade}/{obj.endereco_estado}"
-        return "-"
-    cidade_estado.short_description = 'Cidade/Estado'
 
 
 @admin.register(Pedido)

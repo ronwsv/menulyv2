@@ -1,0 +1,416 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sobre {{ restaurante.nome }} - Delivery Online{% endblock %}
+{% block description %}{{ restaurante.sobre_nos|truncatewords:20 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sobre-hero {
+        background: var(--gradiente-principal);
+        color: white;
+        padding: 60px 0;
+        {% if restaurante.banner %}
+        background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ restaurante.banner.url }}');
+        background-size: cover;
+        background-position: center;
+        {% endif %}
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        transition: transform 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .info-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--cor-primaria);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .horario-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .horario-item:last-child {
+        border-bottom: none;
+    }
+    
+    .horario-dia {
+        font-weight: 600;
+        color: var(--cor-texto);
+    }
+    
+    .horario-tempo {
+        color: #666;
+    }
+    
+    .destaque-info {
+        background: var(--cor-primaria);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        margin: 40px 0;
+    }
+    
+    .galeria-foto {
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        height: 200px;
+    }
+    
+    .galeria-foto img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .galeria-foto:hover img {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="sobre-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center mb-3">
+                    {% if restaurante.logo %}
+                    <img src="{{ restaurante.logo.url }}" alt="{{ restaurante.nome }}" class="me-3" style="width: 80px; height: 80px; object-fit: cover; border-radius: 15px;">
+                    {% endif %}
+                    <div>
+                        <h1 class="display-4 fw-bold mb-2">{{ restaurante.nome }}</h1>
+                        {% if restaurante.slogan %}
+                        <p class="lead mb-0">{{ restaurante.slogan }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-end">
+                <a href="{{ restaurante.get_absolute_url }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Navegação -->
+<section class="py-3 bg-light border-bottom">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'core:lista_restaurantes' %}">Restaurantes</a></li>
+                <li class="breadcrumb-item"><a href="{{ restaurante.get_absolute_url }}">{{ restaurante.nome }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Sobre Nós</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Conteúdo Principal -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Sobre Nós -->
+            <div class="col-lg-8 mb-4">
+                <div class="info-card">
+                    <h2 class="h3 mb-4">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        Sobre Nós
+                    </h2>
+                    
+                    {% if restaurante.sobre_nos %}
+                    <div class="sobre-texto">
+                        {{ restaurante.sobre_nos|linebreaks }}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Bem-vindo ao {{ restaurante.nome }}! Somos apaixonados por oferecer a melhor experiência gastronômica, com ingredientes frescos e sabores únicos. Nossa missão é proporcionar momentos especiais através da comida de qualidade.</p>
+                    
+                    <p>Trabalhamos com dedicação para trazer até você pratos cuidadosamente preparados, mantendo sempre o padrão de excelência que nossos clientes merecem.</p>
+                    
+                    <p>Faça seu pedido online e desfrute da comodidade de receber uma refeição deliciosa no conforto da sua casa!</p>
+                    {% endif %}
+                </div>
+
+                <!-- Informações de Entrega -->
+                <div class="info-card">
+                    <h3 class="h4 mb-4">
+                        <i class="fas fa-truck text-primary me-2"></i>
+                        Informações de Entrega
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="info-icon me-3">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Tempo de Entrega</h5>
+                                    <p class="text-muted mb-0">{{ restaurante.tempo_estimado_entrega }} minutos em média</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="info-icon me-3">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Raio de Entrega</h5>
+                                    <p class="text-muted mb-0">Até {{ restaurante.raio_entrega_km }} km de distância</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="info-icon me-3">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Taxa de Entrega</h5>
+                                    <p class="text-muted mb-0">
+                                        {% if restaurante.taxa_entrega > 0 %}
+                                        R$ {{ restaurante.taxa_entrega|floatformat:2 }}
+                                        {% else %}
+                                        Grátis
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="info-icon me-3">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Pedido Mínimo</h5>
+                                    <p class="text-muted mb-0">
+                                        {% if restaurante.pedido_minimo > 0 %}
+                                        R$ {{ restaurante.pedido_minimo|floatformat:2 }}
+                                        {% else %}
+                                        Sem pedido mínimo
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Horários de Funcionamento -->
+                <div class="info-card">
+                    <h3 class="h5 mb-4">
+                        <i class="fas fa-calendar-alt text-primary me-2"></i>
+                        Horários de Funcionamento
+                    </h3>
+                    
+                    <div class="horarios-lista">
+                        {% if restaurante.funciona_segunda %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Segunda-feira</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_segunda_abertura and restaurante.horario_segunda_fechamento %}
+                                {{ restaurante.horario_segunda_abertura|time:"H:i" }} - {{ restaurante.horario_segunda_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if restaurante.funciona_terca %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Terça-feira</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_terca_abertura and restaurante.horario_terca_fechamento %}
+                                {{ restaurante.horario_terca_abertura|time:"H:i" }} - {{ restaurante.horario_terca_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if restaurante.funciona_quarta %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Quarta-feira</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_quarta_abertura and restaurante.horario_quarta_fechamento %}
+                                {{ restaurante.horario_quarta_abertura|time:"H:i" }} - {{ restaurante.horario_quarta_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if restaurante.funciona_quinta %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Quinta-feira</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_quinta_abertura and restaurante.horario_quinta_fechamento %}
+                                {{ restaurante.horario_quinta_abertura|time:"H:i" }} - {{ restaurante.horario_quinta_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if restaurante.funciona_sexta %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Sexta-feira</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_sexta_abertura and restaurante.horario_sexta_fechamento %}
+                                {{ restaurante.horario_sexta_abertura|time:"H:i" }} - {{ restaurante.horario_sexta_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if restaurante.funciona_sabado %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Sábado</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_sabado_abertura and restaurante.horario_sabado_fechamento %}
+                                {{ restaurante.horario_sabado_abertura|time:"H:i" }} - {{ restaurante.horario_sabado_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if restaurante.funciona_domingo %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Domingo</span>
+                            <span class="horario-tempo">
+                                {% if restaurante.horario_domingo_abertura and restaurante.horario_domingo_fechamento %}
+                                {{ restaurante.horario_domingo_abertura|time:"H:i" }} - {{ restaurante.horario_domingo_fechamento|time:"H:i" }}
+                                {% else %}
+                                Aberto
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% else %}
+                        <div class="horario-item">
+                            <span class="horario-dia">Domingo</span>
+                            <span class="horario-tempo text-muted">Fechado</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Contato -->
+                <div class="info-card">
+                    <h3 class="h5 mb-4">
+                        <i class="fas fa-phone text-primary me-2"></i>
+                        Contato
+                    </h3>
+                    
+                    {% if restaurante.telefone %}
+                    <div class="mb-3">
+                        <strong>Telefone:</strong><br>
+                        <a href="tel:{{ restaurante.telefone }}" class="text-decoration-none">
+                            <i class="fas fa-phone me-2"></i>{{ restaurante.telefone }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if restaurante.whatsapp %}
+                    <div class="mb-3">
+                        <strong>WhatsApp:</strong><br>
+                        <a href="https://wa.me/{{ restaurante.whatsapp|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" class="text-decoration-none text-success">
+                            <i class="fab fa-whatsapp me-2"></i>{{ restaurante.whatsapp }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Email:</strong><br>
+                        <a href="mailto:{{ restaurante.email }}" class="text-decoration-none">
+                            <i class="fas fa-envelope me-2"></i>{{ restaurante.email }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Localização -->
+                <div class="info-card">
+                    <h3 class="h5 mb-4">
+                        <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                        Localização
+                    </h3>
+                    
+                    <div class="endereco mb-3">
+                        <address class="mb-0">
+                            {{ restaurante.endereco_rua }}, {{ restaurante.endereco_numero }}
+                            {% if restaurante.endereco_complemento %}<br>{{ restaurante.endereco_complemento }}{% endif %}
+                            <br>{{ restaurante.endereco_bairro }}
+                            <br>{{ restaurante.endereco_cidade }} - {{ restaurante.endereco_estado }}
+                            <br>CEP: {{ restaurante.endereco_cep }}
+                        </address>
+                    </div>
+                    
+                    <a href="https://maps.google.com/?q={{ restaurante.endereco_rua }}, {{ restaurante.endereco_numero }}, {{ restaurante.endereco_cidade }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-map me-2"></i>Ver no Mapa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="destaque-info">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h3 class="mb-2">Pronto para fazer seu pedido?</h3>
+                <p class="mb-0">Explore nosso cardápio completo e escolha seus pratos favoritos!</p>
+            </div>
+            <div class="col-lg-4 text-end">
+                <a href="{{ restaurante.get_absolute_url }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

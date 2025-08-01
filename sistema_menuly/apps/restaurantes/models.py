@@ -5,16 +5,13 @@ Este arquivo contém todos os models necessários para o funcionamento
 dos mini-sites de restaurantes com customização completa.
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings  # Para AUTH_USER_MODEL
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 import uuid
-
-# Referência ao modelo de usuário customizado
-User = get_user_model()
 
 
 class PlanoMensal(models.Model):
@@ -57,7 +54,7 @@ class PlanoMensal(models.Model):
 class Lojista(models.Model):
     """Model para lojistas (proprietários dos restaurantes) - MANTIDO POR COMPATIBILIDADE."""
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name='Usuário')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Usuário')
     plano = models.ForeignKey(PlanoMensal, on_delete=models.PROTECT, verbose_name='Plano Atual')
     
     # Informações pessoais
@@ -107,8 +104,9 @@ class Restaurante(models.Model):
     
     # Sistema de administradores (novo)
     administradores = models.ManyToManyField(
-        User, 
+        settings.AUTH_USER_MODEL, 
         through='RestauranteAdministrador',
+        through_fields=('restaurante', 'usuario'),  # Especifica quais campos usar
         related_name='restaurantes_gerenciados',
         blank=True,
         verbose_name='Administradores'
@@ -384,7 +382,7 @@ class RestauranteAdministrador(models.Model):
     """
     
     restaurante = models.ForeignKey(Restaurante, on_delete=models.CASCADE, verbose_name='Restaurante')
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Usuário')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Usuário')
     
     NIVEL_ACESSO = (
         ('gerente', 'Gerente'),
@@ -404,7 +402,7 @@ class RestauranteAdministrador(models.Model):
     # Controle
     data_adicionado = models.DateTimeField(auto_now_add=True, verbose_name='Data de Adição')
     adicionado_por = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
         null=True, 
         related_name='administradores_adicionados',

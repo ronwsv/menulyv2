@@ -22,7 +22,7 @@ def pedidos_tempo_real(request):
         if hasattr(request.user, 'restaurante_lojista'):
             restaurante = request.user.restaurante_lojista
         else:
-            restaurante = Restaurante.objects.get(proprietario=request.user)
+            restaurante = Restaurante.objects.get(lojista__user=request.user)
     except Restaurante.DoesNotExist:
         messages.error(request, 'Você não possui acesso a nenhum restaurante.')
         return redirect('lojista:dashboard')
@@ -66,7 +66,7 @@ def pedidos_tempo_real(request):
 def atualizar_status_pedido(request, numero):
     """Atualiza o status de um pedido"""
     try:
-        restaurante = Restaurante.objects.get(proprietario=request.user)
+        restaurante = Restaurante.objects.get(lojista__user=request.user)
         pedido = get_object_or_404(Pedido, numero=numero, restaurante=restaurante)
         
         data = json.loads(request.body)
@@ -113,7 +113,7 @@ def atualizar_status_pedido(request, numero):
 def api_pedidos_estatisticas(request):
     """API para estatísticas dos pedidos em tempo real"""
     try:
-        restaurante = Restaurante.objects.get(proprietario=request.user)
+        restaurante = Restaurante.objects.get(lojista__user=request.user)
         hoje = timezone.now().date()
         
         pedidos_hoje = Pedido.objects.filter(
@@ -160,7 +160,7 @@ def api_pedidos_estatisticas(request):
 def dashboard_metricas(request):
     """Dashboard com métricas avançadas"""
     try:
-        restaurante = Restaurante.objects.get(proprietario=request.user)
+        restaurante = Restaurante.objects.get(lojista__user=request.user)
         
         # Últimos 7 dias
         fim = timezone.now().date()
@@ -233,7 +233,7 @@ def calcular_tempo_medio_pedidos(pedidos_entregues):
 def criar_pedido_teste(request):
     """Cria um pedido de teste para demonstração"""
     try:
-        restaurante = Restaurante.objects.get(proprietario=request.user)
+        restaurante = Restaurante.objects.get(lojista__user=request.user)
         
         # Criar cliente de teste se não existir
         cliente, created = Cliente.objects.get_or_create(

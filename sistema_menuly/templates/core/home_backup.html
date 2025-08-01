@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ SITE_NAME }} - Delivery Multi-Restaurante{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Encontre os Melhores<br>
+                    <span class="text-warning">Restaurantes</span> da Sua Região
+                </h1>
+                <p class="lead mb-4">
+                    Descubra sabores únicos e faça seus pedidos online com entrega rápida e segura.
+                    Mais de <strong>100 restaurantes</strong> esperando por você!
+                </p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'core:lista_restaurantes' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-search me-2"></i>Explorar Restaurantes
+                    </a>
+                    <a href="{% url 'lojista:dashboard' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-store me-2"></i>Área do Lojista
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=500&h=400&fit=crop" 
+                     alt="Delivery" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recursos da Plataforma -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="h1 fw-bold mb-3">Por que Escolher o Menuly?</h2>
+                <p class="lead text-muted">A plataforma completa para delivery online</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-shipping-fast fa-3x" style="color: var(--cor-principal);"></i>
+                    </div>
+                    <h5 class="card-title">Entrega Rápida</h5>
+                    <p class="card-text">
+                        Entrega em média de 30 minutos. Acompanhe seu pedido em tempo real 
+                        através do nosso sistema de tracking.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-shield-alt fa-3x" style="color: var(--cor-principal);"></i>
+                    </div>
+                    <h5 class="card-title">Pagamento Seguro</h5>
+                    <p class="card-text">
+                        Múltiplas formas de pagamento: cartão, PIX, dinheiro. 
+                        Todas as transações são seguras e protegidas.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-star fa-3x" style="color: var(--cor-principal);"></i>
+                    </div>
+                    <h5 class="card-title">Qualidade Garantida</h5>
+                    <p class="card-text">
+                        Restaurantes selecionados e avaliados. Sistema de avaliações 
+                        para garantir sempre a melhor experiência.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Restaurantes em Destaque -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="h1 fw-bold mb-3">Restaurantes em Destaque</h2>
+                <p class="lead text-muted">Os favoritos dos nossos clientes</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for restaurante in restaurantes_destaque %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 shadow-sm">
+                    {% if restaurante.imagem %}
+                    <img src="{{ restaurante.imagem.url }}" class="card-img-top" alt="{{ restaurante.nome }}" style="height: 250px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                        <i class="fas fa-utensils fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ restaurante.nome }}</h5>
+                        <p class="card-text flex-grow-1">
+                            {{ restaurante.descricao|default:"Deliciosos pratos com ingredientes frescos e sabor único!" }}
+                        </p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            {% if restaurante.tempo_entrega_min %}
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ restaurante.tempo_entrega_min }}-{{ restaurante.tempo_entrega_max|default:restaurante.tempo_entrega_min|add:15 }} min
+                            </small>
+                            {% endif %}
+                            {% if restaurante.taxa_entrega %}
+                            <small class="text-muted">
+                                <i class="fas fa-truck"></i> R$ {{ restaurante.taxa_entrega|floatformat:2 }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        
+                        <a href="/{{ restaurante.slug }}/" class="btn btn-primary">
+                            <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <h4><i class="fas fa-info-circle"></i> Em breve!</h4>
+                    <p class="mb-0">Novos restaurantes estão se cadastrando na plataforma. Volte em breve para descobrir opções deliciosas!</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if restaurantes_destaque %}
+        <div class="text-center mt-4">
+            <a href="{% url 'core:lista_restaurantes' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-plus-circle me-2"></i>Ver Todos os Restaurantes
+            </a>
+        </div>
+        {% endif %}
+                        <div class="card-footer bg-transparent">
+                            <a href="{{ restaurante.get_absolute_url }}" class="btn btn-primary w-100">
+                                <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endcomment %}
+            
+            <!-- Placeholder enquanto não temos restaurantes -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop" 
+                         class="card-img-top" style="height: 200px; object-fit: cover;" alt="Pizzaria">
+                    <div class="card-body">
+                        <h5 class="card-title">Pizzaria do José</h5>
+                        <p class="card-text">As melhores pizzas da cidade com massa artesanal!</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>25min
+                            </small>
+                            <small class="text-muted">
+                                Taxa: R$ 5,00
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="#" class="btn btn-primary w-100">
+                            <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=200&fit=crop" 
+                         class="card-img-top" style="height: 200px; object-fit: cover;" alt="Hamburgueria">
+                    <div class="card-body">
+                        <h5 class="card-title">Burger House</h5>
+                        <p class="card-text">Hambúrgueres artesanais com ingredientes premium!</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>30min
+                            </small>
+                            <small class="text-muted">
+                                Taxa: R$ 4,00
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="#" class="btn btn-primary w-100">
+                            <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <img src="https://images.unsplash.com/photo-1564834744159-ff0ea41ba4b9?w=400&h=200&fit=crop" 
+                         class="card-img-top" style="height: 200px; object-fit: cover;" alt="Sushi">
+                    <div class="card-body">
+                        <h5 class="card-title">Sushi Zen</h5>
+                        <p class="card-text">Culinária japonesa autêntica com peixes frescos!</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>40min
+                            </small>
+                            <small class="text-muted">
+                                Taxa: R$ 6,00
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="#" class="btn btn-primary w-100">
+                            <i class="fas fa-utensils me-2"></i>Ver Cardápio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="{% url 'core:lista_restaurantes' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-store me-2"></i>Ver Todos os Restaurantes
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Como Funciona -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="h1 fw-bold mb-3">Como Funciona</h2>
+                <p class="lead text-muted">Simples, rápido e prático</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3 text-center">
+                <div class="mb-3">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px; background: var(--gradiente-principal); color: white;">
+                        <span class="h3 mb-0">1</span>
+                    </div>
+                </div>
+                <h5>Escolha o Restaurante</h5>
+                <p class="text-muted">Navegue pelos restaurantes disponíveis na sua região</p>
+            </div>
+            
+            <div class="col-md-3 text-center">
+                <div class="mb-3">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px; background: var(--gradiente-principal); color: white;">
+                        <span class="h3 mb-0">2</span>
+                    </div>
+                </div>
+                <h5>Monte seu Pedido</h5>
+                <p class="text-muted">Adicione os pratos desejados ao seu carrinho</p>
+            </div>
+            
+            <div class="col-md-3 text-center">
+                <div class="mb-3">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px; background: var(--gradiente-principal); color: white;">
+                        <span class="h3 mb-0">3</span>
+                    </div>
+                </div>
+                <h5>Finalize o Pagamento</h5>
+                <p class="text-muted">Escolha a forma de pagamento e confirme o endereço</p>
+            </div>
+            
+            <div class="col-md-3 text-center">
+                <div class="mb-3">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px; background: var(--gradiente-principal); color: white;">
+                        <span class="h3 mb-0">4</span>
+                    </div>
+                </div>
+                <h5>Receba em Casa</h5>
+                <p class="text-muted">Acompanhe o preparo e aguarde a entrega</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5" style="background: var(--gradiente-principal);">
+    <div class="container text-center text-white">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="h1 fw-bold mb-3">Tem um Restaurante?</h2>
+                <p class="lead mb-4">
+                    Junte-se à nossa plataforma e alcance milhares de clientes. 
+                    Sistema completo de gestão com trial gratuito de 30 dias!
+                </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{% url 'lojista:dashboard' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-rocket me-2"></i>Cadastrar Restaurante
+                    </a>
+                    <a href="#" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-info-circle me-2"></i>Saiba Mais
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,347 @@
+{% extends 'base_white_label.html' %}
+{% load static %}
+
+{% block title %}Cardápio - {{ restaurante.nome }}{% endblock %}
+
+{% block meta_description %}Confira o cardápio completo do {{ restaurante.nome }}. Delivery online com os melhores pratos!{% endblock %}
+
+{% block extra_css %}
+.produto-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    box-shadow: var(--shadow-light, 0 2px 10px rgba(0,0,0,0.1));
+}
+
+.produto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-medium, 0 4px 20px rgba(0,0,0,0.15));
+}
+
+.produto-preco {
+    color: var(--cor-botao);
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.categoria-section {
+    margin-bottom: 3rem;
+}
+
+.categoria-title {
+    color: var(--cor-primaria);
+    border-bottom: 3px solid var(--cor-primaria);
+    padding-bottom: 10px;
+    margin-bottom: 2rem;
+    font-family: var(--fonte-secundaria);
+}
+
+.btn-adicionar {
+    background-color: var(--cor-botao);
+    border-color: var(--cor-botao);
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+}
+
+.btn-adicionar:hover {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+    transform: scale(1.05);
+}
+
+.produto-imagem {
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.carrinho-flutuante {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background-color: var(--cor-botao);
+    border-radius: 50px;
+    padding: 15px 20px;
+    box-shadow: var(--shadow-medium, 0 4px 20px rgba(0,0,0,0.15));
+}
+
+@media (max-width: 768px) {
+    .produto-card {
+        margin-bottom: 1rem;
+    }
+    
+    .categoria-title {
+        font-size: 1.5rem;
+    }
+}
+{% endblock %}
+
+{% block hero %}
+<!-- Hero personalizado para cardápio -->
+{% if tema and tema.imagem_fundo_hero %}
+<section class="hero-section position-relative" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ tema.imagem_fundo_hero.url }}'); background-size: cover; background-position: center; min-height: 400px;">
+    <div class="container-custom d-flex align-items-center justify-content-center text-center text-white" style="min-height: 400px;">
+        <div>
+            <h1 class="display-3 fw-bold mb-3">Nosso Cardápio</h1>
+            <p class="lead mb-4">Descubra sabores únicos e peça com delivery rápido!</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                {% for categoria in categorias %}
+                <a href="#categoria-{{ categoria.slug }}" class="btn btn-outline-light">
+                    {{ categoria.nome }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-custom py-4">
+    <!-- Filtros e busca -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" id="busca-produto" class="form-control" placeholder="Buscar produtos...">
+                <button class="btn btn-primary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select id="filtro-categoria" class="form-select">
+                <option value="">Todas as categorias</option>
+                {% for categoria in categorias %}
+                <option value="{{ categoria.slug }}">{{ categoria.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Cardápio por categorias -->
+    {% for categoria in categorias %}
+    <section id="categoria-{{ categoria.slug }}" class="categoria-section">
+        <h2 class="categoria-title">
+            {% if categoria.icone %}
+            <i class="{{ categoria.icone }}"></i>
+            {% endif %}
+            {{ categoria.nome }}
+        </h2>
+        
+        {% if categoria.descricao %}
+        <p class="text-muted mb-4">{{ categoria.descricao }}</p>
+        {% endif %}
+
+        <div class="row">
+            {% for produto in categoria.produtos.all %}
+            {% if produto.ativo %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card produto-card h-100">
+                    {% if produto.imagem %}
+                    <img src="{{ produto.imagem.url }}" class="card-img-top produto-imagem" alt="{{ produto.nome }}">
+                    {% else %}
+                    <div class="card-img-top produto-imagem d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-utensils fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ produto.nome }}</h5>
+                        
+                        {% if produto.descricao %}
+                        <p class="card-text text-muted flex-grow-1">
+                            {{ produto.descricao|truncatewords:15 }}
+                        </p>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="produto-preco">
+                                R$ {{ produto.preco|floatformat:2 }}
+                            </span>
+                            
+                            <button class="btn btn-adicionar btn-sm" 
+                                    onclick="adicionarAoCarrinho({{ produto.id }}, '{{ produto.nome }}', {{ produto.preco }})">
+                                <i class="fas fa-plus"></i> Adicionar
+                            </button>
+                        </div>
+                        
+                        {% if produto.tempo_preparo %}
+                        <small class="text-muted mt-2">
+                            <i class="fas fa-clock"></i> {{ produto.tempo_preparo }} min
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    {% if produto.promocao %}
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <span class="badge bg-danger">Promoção</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    Nenhum produto disponível nesta categoria no momento.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% empty %}
+    <div class="text-center py-5">
+        <i class="fas fa-utensils fa-4x text-muted mb-3"></i>
+        <h3>Cardápio em construção</h3>
+        <p class="text-muted">Nosso cardápio está sendo preparado com carinho para você!</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Carrinho flutuante -->
+<div id="carrinho-flutuante" class="carrinho-flutuante d-none">
+    <a href="/carrinho/" class="text-white text-decoration-none">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="carrinho-contador" class="badge bg-light text-dark ms-2">0</span>
+        <span class="ms-2">Ver Carrinho</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Sistema de carrinho simples
+let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+
+function adicionarAoCarrinho(produtoId, nome, preco) {
+    // Verifica se o produto já está no carrinho
+    const itemExistente = carrinho.find(item => item.id === produtoId);
+    
+    if (itemExistente) {
+        itemExistente.quantidade += 1;
+    } else {
+        carrinho.push({
+            id: produtoId,
+            nome: nome,
+            preco: preco,
+            quantidade: 1
+        });
+    }
+    
+    // Salva no localStorage
+    localStorage.setItem('carrinho', JSON.stringify(carrinho));
+    
+    // Atualiza a interface
+    atualizarCarrinhoUI();
+    
+    // Feedback visual
+    mostrarToast(`${nome} adicionado ao carrinho!`, 'success');
+}
+
+function atualizarCarrinhoUI() {
+    const contador = document.getElementById('carrinho-contador');
+    const carrinhoFlutuante = document.getElementById('carrinho-flutuante');
+    
+    const totalItens = carrinho.reduce((total, item) => total + item.quantidade, 0);
+    
+    if (totalItens > 0) {
+        contador.textContent = totalItens;
+        carrinhoFlutuante.classList.remove('d-none');
+    } else {
+        carrinhoFlutuante.classList.add('d-none');
+    }
+}
+
+function mostrarToast(mensagem, tipo = 'info') {
+    // Cria toast Bootstrap dinamicamente
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${tipo} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${mensagem}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove o toast após ser fechado
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    container.style.zIndex = '1055';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Busca de produtos
+document.getElementById('busca-produto').addEventListener('input', function(e) {
+    const termo = e.target.value.toLowerCase();
+    const produtos = document.querySelectorAll('.produto-card');
+    
+    produtos.forEach(produto => {
+        const nome = produto.querySelector('.card-title').textContent.toLowerCase();
+        const descricao = produto.querySelector('.card-text')?.textContent.toLowerCase() || '';
+        
+        if (nome.includes(termo) || descricao.includes(termo)) {
+            produto.closest('.col-lg-4').style.display = 'block';
+        } else {
+            produto.closest('.col-lg-4').style.display = 'none';
+        }
+    });
+});
+
+// Filtro por categoria
+document.getElementById('filtro-categoria').addEventListener('change', function(e) {
+    const categoriaSelecionada = e.target.value;
+    const secoes = document.querySelectorAll('.categoria-section');
+    
+    if (categoriaSelecionada === '') {
+        // Mostra todas as categorias
+        secoes.forEach(secao => secao.style.display = 'block');
+    } else {
+        // Mostra apenas a categoria selecionada
+        secoes.forEach(secao => {
+            if (secao.id === `categoria-${categoriaSelecionada}`) {
+                secao.style.display = 'block';
+            } else {
+                secao.style.display = 'none';
+            }
+        });
+    }
+});
+
+// Inicializa o carrinho na carga da página
+document.addEventListener('DOMContentLoaded', function() {
+    atualizarCarrinhoUI();
+});
+
+// Animação suave para links de âncora
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

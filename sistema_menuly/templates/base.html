@@ -107,7 +107,7 @@
         .carrinho-flutuante {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 20px;
             z-index: 1000;
             background: var(--cor-botoes);
             color: white;
@@ -120,6 +120,105 @@
         
         .carrinho-flutuante:hover {
             transform: scale(1.05);
+        }
+        
+        /* Carrinho Lateral */
+        .carrinho-lateral {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+            z-index: 1050;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .carrinho-lateral.show {
+            right: 0;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .carrinho-lateral {
+                width: 90vw;
+                right: -90vw;
+            }
+            
+            .carrinho-lateral.show {
+                right: 0;
+            }
+            
+            /* Botão verde responsivo no mobile */
+            .checkout-flutuante {
+                font-size: 14px !important;
+                padding: 12px 20px !important;
+                min-width: 200px !important;
+                bottom: 10px !important;
+                right: 10px !important;
+            }
+        }
+        
+        .carrinho-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .carrinho-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .carrinho-header {
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+            background: var(--gradiente-principal);
+            color: white;
+        }
+        
+        .carrinho-content {
+            padding: 20px;
+            flex: 1;
+        }
+        
+        .carrinho-footer {
+            padding: 20px;
+            border-top: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+        
+        .item-carrinho {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .item-carrinho:last-child {
+            border-bottom: none;
+        }
+        
+        .item-quantity {
+            background: var(--cor-principal);
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
         }
         
         /* Loading spinner */
@@ -149,6 +248,21 @@
                 right: 10px;
                 padding: 10px 15px;
                 font-size: 0.9rem;
+            }
+            
+            /* Navbar responsiva */
+            .navbar-nav .nav-link {
+                font-size: 0.9rem;
+            }
+            
+            /* Garantir que o carrinho seja visível no mobile */
+            .navbar-toggler[aria-expanded="false"] + .navbar-collapse .nav-item:last-child {
+                display: block !important;
+            }
+            
+            /* Carrinho sempre visível no mobile */
+            #carrinho-header {
+                display: block !important;
             }
         }
     </style>
@@ -193,6 +307,15 @@
                             </a>
                         </li>
                         {% endif %}
+                        <!-- Carrinho no Header -->
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="#" id="carrinho-header" onclick="abrirCarrinhoLateral()">
+                                <i class="fas fa-shopping-cart me-1"></i>Carrinho
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="carrinho-badge" style="display: none;">
+                                    0
+                                </span>
+                            </a>
+                        </li>
                     {% else %}
                         <!-- Menu da plataforma -->
                         <li class="nav-item">
@@ -273,8 +396,57 @@
         </div>
     </footer>
 
+    <!-- Carrinho Lateral -->
+    {% if restaurante %}
+    <div class="carrinho-overlay" id="carrinho-overlay" onclick="fecharCarrinhoLateral()"></div>
+    <div class="carrinho-lateral" id="carrinho-lateral">
+        <div class="carrinho-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>Seu Carrinho
+                </h5>
+                <button type="button" class="btn-close btn-close-white" onclick="fecharCarrinhoLateral()"></button>
+            </div>
+        </div>
+        
+        <div class="carrinho-content">
+            <div id="carrinho-lateral-itens">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <p>Seu carrinho está vazio</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="carrinho-footer" id="carrinho-lateral-footer" style="display: none;">
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>R$ <span id="carrinho-lateral-subtotal">0,00</span></span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Taxa de entrega:</span>
+                    <span>R$ {{ restaurante.taxa_entrega|floatformat:2 }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between h5">
+                    <span>Total:</span>
+                    <span class="text-success">R$ <span id="carrinho-lateral-total">0,00</span></span>
+                </div>
+            </div>
+            <a href="{% url 'restaurante:checkout' slug=restaurante.slug %}" class="btn btn-success btn-lg w-100">
+                <i class="fas fa-credit-card me-2"></i>Finalizar Pedido
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Sistema de Carrinho -->
+    {% load static %}
+    <script src="{% static 'js/carrinho-funcional.js' %}"></script>
     
     <!-- JavaScript customizado -->
     <script>
@@ -332,6 +504,93 @@
             
             return fetch(url, { ...defaultOptions, ...options });
         }
+        
+        // Funções do Carrinho Lateral
+        function abrirCarrinhoLateral() {
+            document.getElementById('carrinho-lateral').classList.add('show');
+            document.getElementById('carrinho-overlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function fecharCarrinhoLateral() {
+            document.getElementById('carrinho-lateral').classList.remove('show');
+            document.getElementById('carrinho-overlay').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        
+        // Atualizar carrinho lateral
+        function atualizarCarrinhoLateral() {
+            if (!window.MENULY.restaurante) return;
+            
+            const carrinho = JSON.parse(localStorage.getItem(`carrinho_${window.MENULY.restaurante}`) || '[]');
+            const badge = document.getElementById('carrinho-badge');
+            const itensEl = document.getElementById('carrinho-lateral-itens');
+            const footerEl = document.getElementById('carrinho-lateral-footer');
+            const subtotalEl = document.getElementById('carrinho-lateral-subtotal');
+            const totalEl = document.getElementById('carrinho-lateral-total');
+            
+            if (carrinho.length === 0) {
+                badge.style.display = 'none';
+                footerEl.style.display = 'none';
+                itensEl.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                        <p>Seu carrinho está vazio</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Atualizar badge
+            const totalItens = carrinho.reduce((sum, item) => sum + item.quantidade, 0);
+            badge.textContent = totalItens;
+            badge.style.display = 'block';
+            
+            // Atualizar itens
+            let html = '';
+            let subtotal = 0;
+            
+            carrinho.forEach(item => {
+                subtotal += item.subtotal;
+                html += `
+                    <div class="item-carrinho">
+                        <div class="item-quantity me-3">${item.quantidade}</div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${item.nome}</h6>
+                            <small class="text-muted">R$ ${item.preco.toFixed(2)} cada</small>
+                        </div>
+                        <div class="text-end">
+                            <strong>R$ ${item.subtotal.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            itensEl.innerHTML = html;
+            
+            // Atualizar totais
+            const taxaEntrega = {% if restaurante %}{{ restaurante.taxa_entrega|default:0 }}{% else %}0{% endif %};
+            const total = subtotal + taxaEntrega;
+            
+            subtotalEl.textContent = subtotal.toFixed(2);
+            totalEl.textContent = total.toFixed(2);
+            
+            footerEl.style.display = 'block';
+        }
+        
+        // Escutar mudanças no localStorage
+        window.addEventListener('storage', function(e) {
+            if (e.key && e.key.startsWith('carrinho_')) {
+                atualizarCarrinhoLateral();
+            }
+        });
+        
+        // Atualizar carrinho ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.MENULY.restaurante) {
+                atualizarCarrinhoLateral();
+            }
+        });
     </script>
     
     {% block extra_js %}{% endblock %}

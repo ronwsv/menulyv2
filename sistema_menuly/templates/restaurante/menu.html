@@ -252,14 +252,7 @@
     </div>
 </section>
 
-<!-- Carrinho Flutuante -->
-<div class="carrinho-flutuante d-none" id="carrinho-flutuante" onclick="abrirCarrinho()">
-    <div class="d-flex align-items-center">
-        <i class="fas fa-shopping-cart me-2"></i>
-        <span id="carrinho-quantidade">0</span> itens
-        <span class="ms-2">R$ <span id="carrinho-total">0,00</span></span>
-    </div>
-</div>
+<!-- Produtos removidos, carrinho flutuante gerenciado pelo JavaScript -->
 
 <!-- Modal do Produto -->
 <div class="modal fade" id="modalProduto" tabindex="-1">
@@ -354,239 +347,18 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Meta tag para ID do restaurante -->
+<meta name="restaurante-id" content="{{ restaurante.id }}">
+
+<!-- Sistema de Carrinho Funcional -->
+<script src="{% static 'js/carrinho-funcional.js' %}"></script>
+
 <script>
-    // Sistema de carrinho do mini-site
-    let carrinho = JSON.parse(localStorage.getItem('carrinho_{{ restaurante.id }}') || '[]');
-    let produtoAtual = null;
+    // Variável global para compatibilidade
+    window.restauranteIdGlobal = {{ restaurante.id }};
     
-    // Dados dos produtos (vamos preencher via template)
-    const produtos = {
-        {% for categoria in categorias %}
-            {% for produto in categoria.produtos.all %}
-                {{ produto.id }}: {
-                    id: {{ produto.id }},
-                    nome: "{{ produto.nome|escapejs }}",
-                    descricao: "{{ produto.descricao|escapejs }}",
-                    preco: {{ produto.preco }},
-                    imagem: "{% if produto.imagem_principal %}{{ produto.imagem_principal.url }}{% endif %}",
-                    calorias: {% if produto.calorias %}{{ produto.calorias }}{% else %}null{% endif %},
-                    tempo_preparo: {% if produto.tempo_preparo %}{{ produto.tempo_preparo }}{% else %}null{% endif %}
-                },
-            {% endfor %}
-        {% endfor %}
-    };
-    
-    // Inicializa a página
-    document.addEventListener('DOMContentLoaded', function() {
-        atualizarCarrinhoFlutuante();
-        configurarBusca();
-        configurarFiltrosCategorias();
-    });
-    
-    // Função para abrir modal do produto
-    function abrirModalProduto(produtoId) {
-        produtoAtual = produtos[produtoId];
-        if (!produtoAtual) return;
-        
-        document.getElementById('modalProdutoTitulo').textContent = produtoAtual.nome;
-        document.getElementById('modalProdutoDescricao').textContent = produtoAtual.descricao;
-        document.getElementById('modalProdutoImagem').src = produtoAtual.imagem;
-        document.getElementById('modalProdutoQuantidade').textContent = '1';
-        document.getElementById('modalProdutoObservacoes').value = '';
-        
-        // Informações extras
-        let infos = '';
-        if (produtoAtual.calorias) {
-            infos += `<span class="badge bg-light text-dark me-2">${produtoAtual.calorias} calorias</span>`;
-        }
-        if (produtoAtual.tempo_preparo) {
-            infos += `<span class="badge bg-light text-dark">${produtoAtual.tempo_preparo} min</span>`;
-        }
-        document.getElementById('modalProdutoInfos').innerHTML = infos;
-        
-        atualizarPrecoModal();
-        
-        const modal = new bootstrap.Modal(document.getElementById('modalProduto'));
-        modal.show();
-    }
-    
-    // Função para alterar quantidade no modal
-    function alterarQuantidade(delta) {
-        const quantidadeEl = document.getElementById('modalProdutoQuantidade');
-        let quantidade = parseInt(quantidadeEl.textContent) + delta;
-        if (quantidade < 1) quantidade = 1;
-        quantidadeEl.textContent = quantidade;
-        atualizarPrecoModal();
-    }
-    
-    // Atualiza o preço total no modal
-    function atualizarPrecoModal() {
-        if (!produtoAtual) return;
-        
-        const quantidade = parseInt(document.getElementById('modalProdutoQuantidade').textContent);
-        const total = produtoAtual.preco * quantidade;
-        document.getElementById('modalProdutoPrecoTotal').textContent = total.toFixed(2);
-    }
-    
-    // Adiciona produto ao carrinho
-    function adicionarAoCarrinho() {
-        if (!produtoAtual) return;
-        
-        const quantidade = parseInt(document.getElementById('modalProdutoQuantidade').textContent);
-        const observacoes = document.getElementById('modalProdutoObservacoes').value;
-        
-        const item = {
-            produto_id: produtoAtual.id,
-            nome: produtoAtual.nome,
-            preco: produtoAtual.preco,
-            quantidade: quantidade,
-            observacoes: observacoes,
-            subtotal: produtoAtual.preco * quantidade
-        };
-        
-        // Verifica se o produto já está no carrinho
-        const indexExistente = carrinho.findIndex(i => 
-            i.produto_id === item.produto_id && i.observacoes === item.observacoes
-        );
-        
-        if (indexExistente >= 0) {
-            carrinho[indexExistente].quantidade += quantidade;
-            carrinho[indexExistente].subtotal = carrinho[indexExistente].preco * carrinho[indexExistente].quantidade;
-        } else {
-            carrinho.push(item);
-        }
-        
-        salvarCarrinho();
-        atualizarCarrinhoFlutuante();
-        
-        // Fecha o modal
-        bootstrap.Modal.getInstance(document.getElementById('modalProduto')).hide();
-        
-        // Mostra feedback
-        showToast('Produto adicionado ao carrinho!', 'success');
-    }
-    
-    // Salva carrinho no localStorage
-    function salvarCarrinho() {
-        localStorage.setItem('carrinho_{{ restaurante.id }}', JSON.stringify(carrinho));
-    }
-    
-    // Atualiza o carrinho flutuante
-    function atualizarCarrinhoFlutuante() {
-        const carrinhoEl = document.getElementById('carrinho-flutuante');
-        const quantidadeEl = document.getElementById('carrinho-quantidade');
-        const totalEl = document.getElementById('carrinho-total');
-        
-        if (carrinho.length === 0) {
-            carrinhoEl.classList.add('d-none');
-            return;
-        }
-        
-        const quantidade = carrinho.reduce((total, item) => total + item.quantidade, 0);
-        const subtotal = carrinho.reduce((total, item) => total + item.subtotal, 0);
-        
-        quantidadeEl.textContent = quantidade;
-        totalEl.textContent = subtotal.toFixed(2);
-        carrinhoEl.classList.remove('d-none');
-    }
-    
-    // Abre modal do carrinho
-    function abrirCarrinho() {
-        if (carrinho.length === 0) return;
-        
-        const itensEl = document.getElementById('carrinho-itens');
-        const subtotalEl = document.getElementById('carrinho-subtotal');
-        const totalFinalEl = document.getElementById('carrinho-total-final');
-        
-        // Monta lista de itens
-        let html = '';
-        carrinho.forEach((item, index) => {
-            html += `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                    <div>
-                        <h6 class="mb-1">${item.nome}</h6>
-                        <small class="text-muted">${item.quantidade}x R$ ${item.preco.toFixed(2)}</small>
-                        ${item.observacoes ? `<br><small class="text-muted">${item.observacoes}</small>` : ''}
-                    </div>
-                    <div class="text-end">
-                        <strong>R$ ${item.subtotal.toFixed(2)}</strong>
-                        <br>
-                        <button class="btn btn-sm btn-outline-danger" onclick="removerDoCarrinho(${index})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        itensEl.innerHTML = html;
-        
-        // Calcula totais
-        const subtotal = carrinho.reduce((total, item) => total + item.subtotal, 0);
-        const taxaEntrega = {{ restaurante.taxa_entrega }};
-        const total = subtotal + taxaEntrega;
-        
-        subtotalEl.textContent = subtotal.toFixed(2);
-        totalFinalEl.textContent = total.toFixed(2);
-        
-        const modal = new bootstrap.Modal(document.getElementById('modalCarrinho'));
-        modal.show();
-    }
-    
-    // Remove item do carrinho
-    function removerDoCarrinho(index) {
-        carrinho.splice(index, 1);
-        salvarCarrinho();
-        atualizarCarrinhoFlutuante();
-        abrirCarrinho(); // Atualiza o modal
-    }
-    
-    // Configura busca de produtos
-    function configurarBusca() {
-        const buscaInput = document.getElementById('busca-input');
-        buscaInput.addEventListener('input', function(e) {
-            const termo = e.target.value.toLowerCase();
-            const produtos = document.querySelectorAll('.produto-item');
-            
-            produtos.forEach(produto => {
-                const nome = produto.dataset.nome;
-                if (nome.includes(termo)) {
-                    produto.style.display = 'block';
-                } else {
-                    produto.style.display = 'none';
-                }
-            });
-        });
-    }
-    
-    // Configura filtros de categorias
-    function configurarFiltrosCategorias() {
-        const categoriaBtns = document.querySelectorAll('.categoria-btn');
-        
-        categoriaBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Remove active de todos
-                categoriaBtns.forEach(b => b.classList.remove('active'));
-                
-                // Adiciona active no clicado
-                this.classList.add('active');
-                
-                const categoriaId = this.dataset.categoria;
-                const sections = document.querySelectorAll('.categoria-section');
-                
-                if (categoriaId === 'todos') {
-                    sections.forEach(section => section.style.display = 'block');
-                } else {
-                    sections.forEach(section => {
-                        if (section.dataset.categoriaId === categoriaId) {
-                            section.style.display = 'block';
-                        } else {
-                            section.style.display = 'none';
-                        }
-                    });
-                }
-            });
-        });
-    }
+    console.log('🍕 Página Pizzaria do José carregada');
+    console.log('🏪 Restaurante:', "{{ restaurante.nome }}", '(ID: {{ restaurante.id }})');
+    console.log('📱 Sistema de carrinho: ATIVO');
 </script>
 {% endblock %}

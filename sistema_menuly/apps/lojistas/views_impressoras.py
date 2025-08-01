@@ -20,8 +20,8 @@ def impressoras(request):
         if hasattr(request.user, 'restaurante_lojista'):
             restaurante = request.user.restaurante_lojista
         else:
-            # Buscar como proprietário
-            restaurante = Restaurante.objects.get(proprietario=request.user)
+            # Buscar como lojista
+            restaurante = Restaurante.objects.get(lojista__user=request.user)
     except Restaurante.DoesNotExist:
         messages.error(request, 'Você não possui acesso a nenhum restaurante.')
         return redirect('lojista:dashboard')
@@ -168,7 +168,7 @@ def imprimir_pedido(request, pedido_id):
     """Imprime um pedido específico"""
     try:
         # Obter restaurante
-        restaurante = Restaurante.objects.get(proprietario=request.user)
+        restaurante = Restaurante.objects.get(lojista__user=request.user)
         
         # Obter pedido
         from apps.pedidos.models import Pedido
@@ -212,7 +212,7 @@ def imprimir_pedido(request, pedido_id):
 def logs_impressao(request):
     """Visualiza logs de impressão"""
     try:
-        restaurante = Restaurante.objects.get(proprietario=request.user)
+        restaurante = Restaurante.objects.get(lojista__user=request.user)
         logs = LogImpressao.objects.filter(
             impressora__restaurante=restaurante
         ).select_related('impressora', 'pedido')[:100]

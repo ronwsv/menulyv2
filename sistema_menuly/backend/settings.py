@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.core.middleware.RestauranteMiddleware',  # CRUCIAL para White Label
+    'apps.core.middleware_simple.RestauranteMiddleware',  # Middleware simplificado funcionando
 ]
 
 ROOT_URLCONF = 'backend.urls'
